@@ -17,8 +17,11 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 COPY patches ./patches
 
-# Install dependencies - force rebuild of native modules for this exact Node version
-RUN CFLAGS="-I/usr/include/python3" npm_config_build_from_source=true pnpm install --frozen-lockfile
+# Cache bust to force fresh install
+ARG CACHEBUST=20260228_001
+
+# Install dependencies - build from source for native modules
+RUN npm_config_build_from_source=true pnpm install --frozen-lockfile
 
 # Verify better-sqlite3 compiled
 RUN node -e "require('better-sqlite3')" && echo 'better-sqlite3 OK'
