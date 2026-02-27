@@ -1,3 +1,6 @@
+[variables]
+NODE_VERSION = "18"
+
 [phases.setup]
 apts = ["python3", "make", "g++", "gcc"]
 
