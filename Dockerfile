@@ -13,17 +13,17 @@ RUN npm install -g corepack@0.24.1 && corepack enable && corepack prepare pnpm@1
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json pnpm-lock.yaml ./
+# Copy package files and npmrc config
+COPY package.json pnpm-lock.yaml .npmrc ./
 COPY patches ./patches
 
-# Cache bust to force fresh install
-ARG CACHEBUST=20260228_001
+# Cache bust to force fresh install with new .npmrc (hoisted linker)
+ARG CACHEBUST=20260228_002
 
-# Install dependencies - build from source for native modules
-RUN npm_config_build_from_source=true pnpm install --frozen-lockfile
+# Install dependencies - hoisted linker + build from source for native modules
+RUN pnpm install --frozen-lockfile
 
-# Verify better-sqlite3 compiled
+# Verify better-sqlite3 compiled and accessible
 RUN node -e "require('better-sqlite3')" && echo 'better-sqlite3 OK'
 
 # Copy source code
