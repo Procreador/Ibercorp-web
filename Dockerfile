@@ -15,7 +15,7 @@ RUN npm install -g node-gyp
 WORKDIR /app
 
 # Cache bust
-ARG CACHEBUST=20260228_005
+ARG CACHEBUST=20260228_006
 
 # Copy all files first
 COPY . .
@@ -35,5 +35,5 @@ RUN pnpm run build
 # Create data directory
 RUN mkdir -p /app/data
 
-EXPOSE 3000
+EXPOSE 8080
 CMD ["pnpm", "start"]
