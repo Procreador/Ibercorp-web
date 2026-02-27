@@ -5,7 +5,7 @@
     "buildCommand": "pnpm install && pnpm run build"
   },
   "deploy": {
-    "startCommand": "pnpm start",
+    "startCommand": "pnpm rebuild better-sqlite3 && pnpm start",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   }
