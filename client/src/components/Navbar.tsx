@@ -49,7 +49,7 @@ export default function Navbar() {
     : "bg-white/95 backdrop-blur-md shadow-sm";
 
   const textColor = isTransparent ? "text-white" : "text-[#2C2C2C]";
-  const currentLogo = isTransparent ? LOGO_WHITE_URL : LOGO_URL;
+  const currentLogo = LOGO_URL; // Usamos el logo transparente subido por el usuario en todos los estados
 
   const handleDropdownItemClick = () => {
     setDropdownOpen(false);
@@ -65,7 +65,7 @@ export default function Navbar() {
             <img
               src={currentLogo}
               alt="Ibercorp"
-              className="h-11 w-auto transition-all duration-300"
+              className="h-16 w-auto transition-all duration-300 object-contain drop-shadow-sm"
             />
           </Link>
 
