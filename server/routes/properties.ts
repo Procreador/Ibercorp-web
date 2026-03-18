@@ -15,7 +15,8 @@ export const router = Router();
 // Configure multer for image uploads
 const storage = multer.diskStorage({
   destination: async (req, file, cb) => {
-    const uploadDir = path.resolve(__dirname, "../../client/public/img/properties");
+    // Save to the persistent volume folder (data/images) rather than the ephemeral client folder
+    const uploadDir = path.resolve(process.cwd(), "data", "images");
     try {
       await fs.mkdir(uploadDir, { recursive: true });
       cb(null, uploadDir);
