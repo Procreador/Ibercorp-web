@@ -5,12 +5,17 @@ import { properties as staticProperties, zones, Property } from "@/lib/propertie
 export default function Propiedades() {
   const sectionRef = useRef<HTMLElement>(null);
   const [dbProperties, setDbProperties] = useState<Property[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
   // Obtener el parámetro de zona de la URL usando window.location.search
-  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : "");
   const selectedZone = searchParams.get('zona');
 
+  // Scroll al inicio cuando cambia la zona
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [selectedZone]);
+
+  // Cargar propiedades de la base de datos
   useEffect(() => {
     async function fetchProperties() {
       try {
@@ -19,39 +24,52 @@ export default function Propiedades() {
           const data = await response.json();
           const mappedData: Property[] = data.map((p: any) => ({
             ...p,
-            beds: p.bedrooms,
-            baths: p.bathrooms,
-            m2: p.size,
-            ref: p.reference,
+            beds: p.bedrooms || 0,
+            baths: p.bathrooms || 0,
+            m2: p.size || 0,
+            ref: p.reference || "REF-SYNC",
             tag: p.badge || "NUEVO",
             images: p.images && p.images.length > 0 ? p.images : ["/img/hero-001.jpg"]
           }));
           setDbProperties(mappedData);
         }
       } catch (error) {
-        console.error("Error fetching properties:", error);
-      } finally {
-        setIsLoading(false);
+        console.error("Error fetching properties from API:", error);
       }
     }
     fetchProperties();
   }, []);
 
-  // Combinar propiedades estáticas con las de la DB
+  // Animación de entrada
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("animate-in");
+          }
+        });
+      },
+      { threshold: 0.05 }
+    );
+    if (sectionRef.current) observer.observe(sectionRef.current);
+    return () => observer.disconnect();
+  }, [dbProperties, staticProperties]);
+
+  // Combinar (DB primero, luego estáticas)
   const allProperties = useMemo(() => {
     return [...dbProperties, ...staticProperties];
   }, [dbProperties]);
 
-  // Filtrar propiedades por zona
+  // Filtrar
   const filteredProperties = useMemo(() => {
     if (!selectedZone) return allProperties;
-    return allProperties.filter(property => property.zone === selectedZone);
+    return allProperties.filter(p => p.zone === selectedZone);
   }, [selectedZone, allProperties]);
 
-  // Obtener información de la zona seleccionada
   const currentZone = zones.find(z => z.id === selectedZone);
   const title = currentZone ? currentZone.name : "Propiedades";
-  const subtitle = currentZone ? currentZone.description : "Selección de inmuebles exclusivos en las mejores ubicaciones de Madrid. Cada propiedad ha sido cuidadosamente seleccionada por nuestro equipo.";
+  const subtitle = currentZone ? currentZone.description : "Selección de inmuebles exclusivos en las mejores ubicaciones de Madrid.";
 
   return (
     <div className="min-h-screen pt-20">
@@ -69,71 +87,34 @@ export default function Propiedades() {
           {title}
         </h1>
         <div className="gold-line mb-6" />
-        <p
-          className="text-[#6B6560] text-base max-w-xl mx-auto leading-relaxed"
-          style={{ fontFamily: "var(--font-body)", fontWeight: 300 }}
-        >
+        <p className="text-[#6B6560] text-base max-w-xl mx-auto leading-relaxed">
           {subtitle}
         </p>
       </div>
 
-      <div className="h-px bg-gradient-to-r from-transparent via-[#B8A07E]/30 to-transparent" />
-
-      <section
-        ref={sectionRef}
-        className="fade-section py-16 md:py-24 px-6 md:px-12"
-      >
+      <section ref={sectionRef} className="fade-section py-16 md:py-24 px-6 md:px-12">
         <div className="max-w-[1400px] mx-auto">
           {filteredProperties.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
               {filteredProperties.map((property, i) => (
-                <div
-                  key={property.id}
-                  className="fade-child"
-                  style={{ transitionDelay: `${i * 100}ms` }}
-                >
+                <div key={property.id} className="fade-child" style={{ transitionDelay: `${i * 100}ms` }}>
                   <PropertyCard property={property} />
                 </div>
               ))}
             </div>
           ) : (
             <div className="text-center py-16">
-              <p
-                className="text-[#6B6560] text-lg"
-                style={{ fontFamily: "var(--font-body)" }}
-              >
-                No hay propiedades disponibles en esta zona actualmente.
-              </p>
-              <p
-                className="text-[#B8A07E] text-sm mt-4"
-                style={{ fontFamily: "var(--font-body)" }}
-              >
-                Por favor, contacte con nosotros para más información sobre propiedades off-market.
-              </p>
+              <p className="text-[#6B6560] text-lg">No hay propiedades disponibles en esta zona.</p>
             </div>
           )}
         </div>
       </section>
 
       <style>{`
-        .fade-section {
-          opacity: 0;
-          transform: translateY(30px);
-          transition: opacity 0.7s ease, transform 0.7s ease;
-        }
-        .fade-section.animate-in {
-          opacity: 1;
-          transform: translateY(0);
-        }
-        .fade-section.animate-in .fade-child {
-          opacity: 1;
-          transform: translateY(0);
-        }
-        .fade-child {
-          opacity: 0;
-          transform: translateY(20px);
-          transition: opacity 0.6s ease, transform 0.6s ease;
-        }
+        .fade-section { opacity: 0; transform: translateY(30px); transition: all 0.7s ease; }
+        .fade-section.animate-in { opacity: 1; transform: translateY(0); }
+        .fade-child { opacity: 0; transform: translateY(20px); transition: all 0.6s ease; }
+        .fade-section.animate-in .fade-child { opacity: 1; transform: translateY(0); }
       `}</style>
     </div>
   );
