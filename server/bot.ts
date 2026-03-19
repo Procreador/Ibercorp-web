@@ -82,7 +82,7 @@ export function initBot() {
         responseType: 'arraybuffer'
       });
       
-      const tempFilePath = path.join(process.cwd(), `temp_${Date.now()}.jpg`);
+      const tempFilePath = path.join(process.cwd(), `temp_${Date.now()}_${Math.floor(Math.random() * 10000)}.jpg`);
       fs.writeFileSync(tempFilePath, response.data);
       
       if (!userPendingImages[ctx.from.id]) {
@@ -91,6 +91,12 @@ export function initBot() {
       userPendingImages[ctx.from.id].push(tempFilePath);
       
       ctx.reply(`📸 Imagen ${userPendingImages[ctx.from.id].length} guardada en memoria. Sigue subiendo fotos o envía el texto/audio con los detalles.`);
+      
+      // Procesar texto si viene incluido como pie de foto (caption)
+      if (ctx.message.caption) {
+        const msgMessage = await ctx.reply("📝 Texto adjunto a la foto recibido. Procesando...");
+        await processTextForProperty(ctx, ctx.message.caption, msgMessage.message_id);
+      }
     } catch (e) {
       console.error(e);
       ctx.reply("❌ Hubo un error procesando la imagen.");
