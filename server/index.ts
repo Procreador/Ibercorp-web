@@ -11,8 +11,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Import API routes
+// Import API routes
 import { router as propertiesRouter } from "./routes/properties.js";
 import { router as authRouter } from "./routes/auth.js";
+import { initBot } from "./bot.js";
 
 async function startServer() {
   const app = express();
@@ -57,6 +59,12 @@ async function startServer() {
   server.listen(port, "0.0.0.0", () => {
     console.log(`Server running on http://0.0.0.0:${port}/`);
     console.log(`API available at http://0.0.0.0:${port}/api/`);
+    
+    // Launch Telegram Bot
+    if (process.env.NODE_ENV === "production" || process.env.TELEGRAM_BOT_TOKEN) {
+      console.log("Starting Telegram Bot...");
+      initBot();
+    }
   });
 }
 
