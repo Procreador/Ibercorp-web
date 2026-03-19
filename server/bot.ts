@@ -23,7 +23,7 @@ export function initBot() {
 
   const bot = new Telegraf(TELEGRAM_BOT_TOKEN);
   const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
-  const apiUrl = `http://localhost:${PORT || 3000}/api/properties`;
+  const apiUrl = `http://127.0.0.1:${PORT || 3000}/api/properties`;
 
   bot.start((ctx) => {
     ctx.reply("👋 ¡Hola! Soy el agente conversacional de IBERCORP. Envíame un mensaje de voz o texto para añadir, modificar o eliminar propiedades.");
