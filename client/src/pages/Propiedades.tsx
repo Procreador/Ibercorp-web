@@ -1,38 +1,52 @@
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 import PropertyCard from "@/components/PropertyCard";
-import { properties, zones } from "@/lib/properties";
+import { properties as staticProperties, zones, Property } from "@/lib/properties";
 
 export default function Propiedades() {
   const sectionRef = useRef<HTMLElement>(null);
-  
+  const [dbProperties, setDbProperties] = useState<Property[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   // Obtener el parámetro de zona de la URL usando window.location.search
-  const searchParams = new URLSearchParams(window.location.search);
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
   const selectedZone = searchParams.get('zona');
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [selectedZone]);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("animate-in");
-          }
-        });
-      },
-      { threshold: 0.05 }
-    );
-    if (sectionRef.current) observer.observe(sectionRef.current);
-    return () => observer.disconnect();
+    async function fetchProperties() {
+      try {
+        const response = await fetch('/api/properties');
+        if (response.ok) {
+          const data = await response.json();
+          const mappedData: Property[] = data.map((p: any) => ({
+            ...p,
+            beds: p.bedrooms,
+            baths: p.bathrooms,
+            m2: p.size,
+            ref: p.reference,
+            tag: p.badge || "NUEVO",
+            images: p.images && p.images.length > 0 ? p.images : ["/img/hero-001.jpg"]
+          }));
+          setDbProperties(mappedData);
+        }
+      } catch (error) {
+        console.error("Error fetching properties:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchProperties();
   }, []);
+
+  // Combinar propiedades estáticas con las de la DB
+  const allProperties = useMemo(() => {
+    return [...dbProperties, ...staticProperties];
+  }, [dbProperties]);
 
   // Filtrar propiedades por zona
   const filteredProperties = useMemo(() => {
-    if (!selectedZone) return properties;
-    return properties.filter(property => property.zone === selectedZone);
-  }, [selectedZone]);
+    if (!selectedZone) return allProperties;
+    return allProperties.filter(property => property.zone === selectedZone);
+  }, [selectedZone, allProperties]);
 
   // Obtener información de la zona seleccionada
   const currentZone = zones.find(z => z.id === selectedZone);

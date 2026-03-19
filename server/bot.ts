@@ -37,7 +37,8 @@ export function initBot() {
       
       // We need to fetch the file and pass it to OpenAI
       const response = await fetch(fileLink.toString());
-      const buffer = await response.buffer();
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
 
       // OpenAI expects a file, we can use a temporary file or a custom File object
       const tempFilePath = path.join(process.cwd(), `temp_${Date.now()}.ogg`);
@@ -114,19 +115,21 @@ export function initBot() {
         "action": "create" | "update" | "delete",
         "reference": "string",
         "property": {
-          "title": "string",
-          "address": "string",
+          "title": "string (Genera un título atractivo y profesional si no se proporciona, ej: 'Lujoso Ático en Recoletos')",
+          "address": "string (Si no se indica, usa la zona o barrio)",
           "zone": "salamanca" | "almagro" | "jeronimos" | "justicia" | "la-moraleja" | "pozuelo" | "madrid-capital" | "otras-zonas" | "singulares",
-          "price": "string",
-          "size": number,
+          "price": "string (con moneda)",
+          "size": number (en m2),
           "bedrooms": number,
           "bathrooms": number,
           "description": "string",
-          "badge": "string (ej: PREMIUM, REFORMADO)"
+          "badge": "string (ej: PREMIUM, REFORMADO, NUEVO)"
         }
       }
-      Si es crear, el ID o referencia se genera o se extrae. 
-      Devuelve SOLO un JSON válido, sin delimitadores de código markdown como \`\`\`json.
+      Reglas importantes:
+      1. Si no hay título en el mensaje, INVÉNTATE uno basado en las características (ej: 'Elegante piso con vistas en Salamanca').
+      2. Si no hay dirección exacta, usa el nombre de la zona.
+      3. Devuelve SOLO el JSON vástago, sin bloques de código markdown.
       `;
 
       const completion = await openai.chat.completions.create({
