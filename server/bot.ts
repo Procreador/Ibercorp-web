@@ -1,7 +1,7 @@
 import { Telegraf } from "telegraf";
 import { message } from "telegraf/filters";
 import OpenAI from "openai";
-import dotenv from "dotenv";
+
 import fs from "fs";
 import path from "path";
 import axios from "axios";
@@ -11,7 +11,7 @@ import FormData from "form-data";
 const userPendingImages: Record<number, string[]> = {};
 
 
-dotenv.config();
+
 
 const { TELEGRAM_BOT_TOKEN, OPENAI_API_KEY, API_TOKEN, PORT } = process.env;
 
