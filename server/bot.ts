@@ -113,23 +113,16 @@ export function initBot() {
       Extrae los siguientes datos del texto y devuélvelos en formato JSON estructurado:
       {
         "action": "create" | "update" | "delete",
-        "reference": "string",
+        "reference": "string (ID, Referencia o TÍTULO de la propiedad a modificar/borrar)",
         "property": {
-          "title": "string (Genera un título atractivo y profesional si no se proporciona, ej: 'Lujoso Ático en Recoletos')",
-          "address": "string (Si no se indica, usa la zona o barrio)",
-          "zone": "salamanca" | "almagro" | "jeronimos" | "justicia" | "la-moraleja" | "pozuelo" | "madrid-capital" | "otras-zonas" | "singulares",
-          "price": "string (con moneda)",
-          "size": number (en m2),
-          "bedrooms": number,
-          "bathrooms": number,
-          "description": "string",
-          "badge": "string (ej: PREMIUM, REFORMADO, NUEVO)"
+          "title": "string (OBLIGATORIO para 'create'. Genera uno atractivo si falta)",
+          ...
         }
       }
-      Reglas importantes:
-      1. Si no hay título en el mensaje, INVÉNTATE uno basado en las características (ej: 'Elegante piso con vistas en Salamanca').
-      2. Si no hay dirección exacta, usa el nombre de la zona.
-      3. Devuelve SOLO el JSON vástago, sin bloques de código markdown.
+      Reglas críticas para 'update' y 'delete':
+      1. El campo 'reference' es VITAL. Pon ahí lo que el usuario use para identificar el piso (ej: el título exacto, la dirección, o la referencia técnica). Si dice 'López de Hoyos', pon 'López de Hoyos' en 'reference'.
+      2. No devuelvas 'reference' vacío si el usuario ha nombrado el piso de alguna forma.
+      3. Devuelve SOLO el JSON, sin markdown.
       `;
 
       const completion = await openai.chat.completions.create({
@@ -189,13 +182,21 @@ export function initBot() {
            // Primero buscamos la propiedad para obtener su ID real
            const allPropsRes = await axios.get(apiUrl);
            const allProps = allPropsRes.data;
-           const searchQuery = orderData.reference.toLowerCase();
            
-           const found = allProps.find((p: any) => 
-             p.id.toLowerCase() === searchQuery || 
-             (p.reference && p.reference.toLowerCase() === searchQuery) ||
-             (p.title && p.title.toLowerCase() === searchQuery)
-           );
+           // Normalización para búsqueda flexible
+           const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+           const searchQuery = normalize(orderData.reference);
+           
+           const found = allProps.find((p: any) => {
+             const pId = normalize(p.id || "");
+             const pRef = normalize(p.reference || "");
+             const pTitle = normalize(p.title || "");
+             
+             return pId.includes(searchQuery) || 
+                    pRef.includes(searchQuery) || 
+                    pTitle.includes(searchQuery) ||
+                    searchQuery.includes(pRef) && pRef.length > 2;
+           });
 
            if (!found) {
              await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ No se encontró ninguna propiedad que coincida con "${orderData.reference}".`);
@@ -229,16 +230,24 @@ export function initBot() {
          }
       } else if (orderData.action === "delete") {
          try {
-           // Primero buscamos la propiedad para obtener su ID real
-           const allPropsRes = await axios.get(apiUrl);
-           const allProps = allPropsRes.data;
-           const searchQuery = orderData.reference.toLowerCase();
-           
-           const found = allProps.find((p: any) => 
-             p.id.toLowerCase() === searchQuery || 
-             (p.reference && p.reference.toLowerCase() === searchQuery) ||
-             (p.title && p.title.toLowerCase() === searchQuery)
-           );
+            // Primero buscamos la propiedad para obtener su ID real
+            const allPropsRes = await axios.get(apiUrl);
+            const allProps = allPropsRes.data;
+            
+            // Normalización para búsqueda flexible
+            const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const searchQuery = normalize(orderData.reference);
+            
+            const found = allProps.find((p: any) => {
+              const pId = normalize(p.id || "");
+              const pRef = normalize(p.reference || "");
+              const pTitle = normalize(p.title || "");
+              
+              return pId.includes(searchQuery) || 
+                     pRef.includes(searchQuery) || 
+                     pTitle.includes(searchQuery) ||
+                     searchQuery.includes(pRef) && pRef.length > 2;
+            });
 
            if (!found) {
              await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ No se pudo eliminar: No se encontró la propiedad "${orderData.reference}".`);
