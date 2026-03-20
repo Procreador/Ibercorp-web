@@ -56,10 +56,33 @@ export default function Propiedades() {
     return () => observer.disconnect();
   }, [dbProperties, staticProperties]);
 
-  // Combinar (DB primero, luego estáticas)
+  // Combinar (De-duplicar por ID, priorizar datos de DB pero mantener fotos estáticas si faltan)
   const allProperties = useMemo(() => {
-    return [...dbProperties, ...staticProperties];
-  }, [dbProperties]);
+    const propertyMap = new Map<string, Property>();
+
+    // Primero añadimos las estáticas (que tienen las fotos buenas)
+    staticProperties.forEach(p => propertyMap.set(p.id, p));
+
+    // Luego procesamos las de la DB
+    dbProperties.forEach(p => {
+      const existing = propertyMap.get(p.id);
+      if (existing) {
+        // Si ya existe, fusionamos. Mantenemos las fotos estáticas si la DB no tiene imágenes reales
+        propertyMap.set(p.id, {
+          ...existing,
+          ...p,
+          images: p.images && p.images.length > 0 && !p.images[0].includes('hero-001') 
+            ? p.images 
+            : existing.images
+        });
+      } else {
+        // Si es nueva (ej. del bot), la añadimos directamente
+        propertyMap.set(p.id, p);
+      }
+    });
+
+    return Array.from(propertyMap.values());
+  }, [dbProperties, staticProperties]);
 
   // Filtrar
   const filteredProperties = useMemo(() => {
