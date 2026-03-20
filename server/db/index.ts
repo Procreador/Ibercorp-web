@@ -113,8 +113,8 @@ export const db = {
     stmt.run(
       property.id,
       property.title,
-      property.address,
-      property.zone,
+      property.address || "Dirección pendiente",
+      property.zone || "Zona pendiente",
       property.price || null,
       property.size || null,
       property.bedrooms || null,
