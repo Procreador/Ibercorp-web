@@ -129,7 +129,7 @@ export function initBot() {
         model: "gpt-4o",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: text }
+          { role: "user", content: `Contexto actual: El usuario está viendo la web de Ibercorp.\nMensaje: ${text}` }
         ],
       });
 
@@ -183,19 +183,17 @@ export function initBot() {
            const allPropsRes = await axios.get(apiUrl);
            const allProps = allPropsRes.data;
            
-           // Normalización para búsqueda flexible
-           const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+           // Normalización robusta (ignora acentos, espacios y caracteres especiales)
+           const normalize = (s: string | undefined) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, '');
            const searchQuery = normalize(orderData.reference);
            
            const found = allProps.find((p: any) => {
-             const pId = normalize(p.id || "");
-             const pRef = normalize(p.reference || "");
-             const pTitle = normalize(p.title || "");
+             const pId = normalize(p.id);
+             const pRef = normalize(p.reference);
+             const pTitle = normalize(p.title);
              
-             return pId.includes(searchQuery) || 
-                    pRef.includes(searchQuery) || 
-                    pTitle.includes(searchQuery) ||
-                    searchQuery.includes(pRef) && pRef.length > 2;
+             return (searchQuery && (pId.includes(searchQuery) || pRef.includes(searchQuery) || pTitle.includes(searchQuery))) ||
+                    (pRef.length > 3 && searchQuery.includes(pRef));
            });
 
            if (!found) {
@@ -234,19 +232,17 @@ export function initBot() {
             const allPropsRes = await axios.get(apiUrl);
             const allProps = allPropsRes.data;
             
-            // Normalización para búsqueda flexible
-            const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+            // Normalización robusta (ignora acentos, espacios y caracteres especiales)
+            const normalize = (s: string | undefined) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, '');
             const searchQuery = normalize(orderData.reference);
             
             const found = allProps.find((p: any) => {
-              const pId = normalize(p.id || "");
-              const pRef = normalize(p.reference || "");
-              const pTitle = normalize(p.title || "");
+              const pId = normalize(p.id);
+              const pRef = normalize(p.reference);
+              const pTitle = normalize(p.title);
               
-              return pId.includes(searchQuery) || 
-                     pRef.includes(searchQuery) || 
-                     pTitle.includes(searchQuery) ||
-                     searchQuery.includes(pRef) && pRef.length > 2;
+              return (searchQuery && (pId.includes(searchQuery) || pRef.includes(searchQuery) || pTitle.includes(searchQuery))) ||
+                     (pRef.length > 3 && searchQuery.includes(pRef));
             });
 
            if (!found) {
