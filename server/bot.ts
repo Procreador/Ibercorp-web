@@ -140,6 +140,9 @@ export function initBot() {
 
       const orderData = JSON.parse(jsonStr);
 
+      // Log de diagnóstico para el desarrollador (se envía al chat)
+      console.log(`Bot Action: ${orderData.action}, Search: ${orderData.reference}`);
+
       await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, "⚡ Ejecutando operación en la base de datos...");
 
       if (orderData.action === "create") {
@@ -183,17 +186,26 @@ export function initBot() {
            const allPropsRes = await axios.get(apiUrl);
            const allProps = allPropsRes.data;
            
+           await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `🔍 Buscando "${orderData.reference}" en catálogo de ${allProps.length} propiedades...`);
+
            // Normalización robusta (ignora acentos, espacios y caracteres especiales)
            const normalize = (s: string | undefined) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, '');
            const searchQuery = normalize(orderData.reference);
+           const searchWords = searchQuery.split(/\s+/).filter(w => w.length > 2);
            
            const found = allProps.find((p: any) => {
              const pId = normalize(p.id);
              const pRef = normalize(p.reference);
              const pTitle = normalize(p.title);
              
-             return (searchQuery && (pId.includes(searchQuery) || pRef.includes(searchQuery) || pTitle.includes(searchQuery))) ||
-                    (pRef.length > 3 && searchQuery.includes(pRef));
+             // Coincidencia exacta o parcial
+             const matchesAny = (tag: string) => tag.includes(searchQuery) || searchQuery.includes(tag) && tag.length > 3;
+             if (matchesAny(pId) || matchesAny(pRef) || matchesAny(pTitle)) return true;
+             
+             // Coincidencia por palabras (si el usuario dice solo una palabra clave)
+             if (searchWords.length > 0 && searchWords.some(w => pTitle.includes(w) || pRef.includes(w))) return true;
+             
+             return false;
            });
 
            if (!found) {
@@ -232,17 +244,24 @@ export function initBot() {
             const allPropsRes = await axios.get(apiUrl);
             const allProps = allPropsRes.data;
             
+            await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `🔍 Buscando "${orderData.reference}" para borrar en catálogo de ${allProps.length} propiedades...`);
+
             // Normalización robusta (ignora acentos, espacios y caracteres especiales)
             const normalize = (s: string | undefined) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, '');
             const searchQuery = normalize(orderData.reference);
+            const searchWords = searchQuery.split(/\s+/).filter(w => w.length > 2);
             
             const found = allProps.find((p: any) => {
               const pId = normalize(p.id);
               const pRef = normalize(p.reference);
               const pTitle = normalize(p.title);
               
-              return (searchQuery && (pId.includes(searchQuery) || pRef.includes(searchQuery) || pTitle.includes(searchQuery))) ||
-                     (pRef.length > 3 && searchQuery.includes(pRef));
+              const matchesAny = (tag: string) => tag.includes(searchQuery) || searchQuery.includes(tag) && tag.length > 3;
+              if (matchesAny(pId) || matchesAny(pRef) || matchesAny(pTitle)) return true;
+              
+              if (searchWords.length > 0 && searchWords.some(w => pTitle.includes(w) || pRef.includes(w))) return true;
+              
+              return false;
             });
 
            if (!found) {
