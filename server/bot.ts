@@ -185,16 +185,32 @@ export function initBot() {
            await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ Fallo en la API al crear: ${err.response?.statusText || err.message}`);
         }
       } else if (orderData.action === "update") {
-         const formData = new FormData();
-         formData.append('data', JSON.stringify(orderData.property));
-         
-         const images = userPendingImages[ctx.from.id] || [];
-         for (const imgPath of images) {
-           formData.append('images', fs.createReadStream(imgPath));
-         }
-
          try {
-           const res = await axios.put(`${apiUrl}/${orderData.reference}`, formData, {
+           // Primero buscamos la propiedad para obtener su ID real
+           const allPropsRes = await axios.get(apiUrl);
+           const allProps = allPropsRes.data;
+           const searchQuery = orderData.reference.toLowerCase();
+           
+           const found = allProps.find((p: any) => 
+             p.id.toLowerCase() === searchQuery || 
+             (p.reference && p.reference.toLowerCase() === searchQuery) ||
+             (p.title && p.title.toLowerCase() === searchQuery)
+           );
+
+           if (!found) {
+             await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ No se encontró ninguna propiedad que coincida con "${orderData.reference}".`);
+             return;
+           }
+
+           const formData = new FormData();
+           formData.append('data', JSON.stringify(orderData.property));
+           
+           const images = userPendingImages[ctx.from.id] || [];
+           for (const imgPath of images) {
+             formData.append('images', fs.createReadStream(imgPath));
+           }
+
+           const res = await axios.put(`${apiUrl}/${found.id}`, formData, {
              headers: {
                'Authorization': `Bearer ${API_TOKEN}`,
                ...formData.getHeaders()
@@ -206,21 +222,44 @@ export function initBot() {
               if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
            }
 
-           await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `✅ ¡Propiedad ${orderData.reference} actualizada con éxito!`);
+           await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `✅ ¡Propiedad "${found.title}" actualizada con éxito!`);
          } catch (err: any) {
+           console.error(err);
            await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ Fallo al actualizar la propiedad: ${err.response?.statusText || err.message}`);
          }
       } else if (orderData.action === "delete") {
-         const res = await fetch(`${apiUrl}/${orderData.reference}`, {
-            method: 'DELETE',
-            headers: {
-              'Authorization': `Bearer ${API_TOKEN}`
-            }
-         });
-         if (res.ok) {
-           await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `✅ Propiedad ${orderData.reference} eliminada.`);
-         } else {
-           await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ No se pudo eliminar la propiedad: ${res.statusText}`);
+         try {
+           // Primero buscamos la propiedad para obtener su ID real
+           const allPropsRes = await axios.get(apiUrl);
+           const allProps = allPropsRes.data;
+           const searchQuery = orderData.reference.toLowerCase();
+           
+           const found = allProps.find((p: any) => 
+             p.id.toLowerCase() === searchQuery || 
+             (p.reference && p.reference.toLowerCase() === searchQuery) ||
+             (p.title && p.title.toLowerCase() === searchQuery)
+           );
+
+           if (!found) {
+             await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ No se pudo eliminar: No se encontró la propiedad "${orderData.reference}".`);
+             return;
+           }
+
+           const res = await fetch(`${apiUrl}/${found.id}`, {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${API_TOKEN}`
+              }
+           });
+
+           if (res.ok) {
+             await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `✅ Propiedad "${found.title}" eliminada del catálogo.`);
+           } else {
+             await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ No se pudo eliminar la propiedad: ${res.statusText}`);
+           }
+         } catch (err: any) {
+           console.error(err);
+           await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ Error al intentar eliminar: ${err.message}`);
          }
       } else {
          await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❓ Acción no reconocida: ${orderData.action}`);
