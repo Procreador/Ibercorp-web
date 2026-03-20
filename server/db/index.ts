@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Database path
-const dbPath = path.resolve(__dirname, "../../data/properties.db");
+const dbPath = path.resolve(process.cwd(), "data/properties.db");
 
 // Ensure data directory exists
 const dataDir = path.dirname(dbPath);
