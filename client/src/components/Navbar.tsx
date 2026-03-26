@@ -49,7 +49,7 @@ export default function Navbar() {
     : "bg-white/95 backdrop-blur-md shadow-sm";
 
   const textColor = isTransparent ? "text-white" : "text-[#2C2C2C]";
-  const currentLogo = LOGO_URL; // Usamos el logo transparente subido por el usuario en todos los estados
+  const currentLogo = isTransparent ? LOGO_WHITE_URL : LOGO_URL;
 
   const handleDropdownItemClick = () => {
     setDropdownOpen(false);
