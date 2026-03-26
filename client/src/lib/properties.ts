@@ -280,5 +280,5 @@ export const zones = [
   },
 ];
 
-export const LOGO_URL = "/img/logo-transparent.png";
-export const LOGO_WHITE_URL = "/img/logo-white-transparent.png";
+export const LOGO_URL = "/img/logo-ibercorp-letrasnegras.gif";
+export const LOGO_WHITE_URL = "/img/logo-ibercorp-letrasblancas.gif";
