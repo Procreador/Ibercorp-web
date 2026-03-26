@@ -39,25 +39,25 @@ export default function Nosotros() {
               className="text-[#6B6560] text-base leading-[1.85] text-justify"
               style={{ fontFamily: "var(--font-body)", fontWeight: 300 }}
             >
-              Ibercorp nace de la convicción de que la gestión inmobiliaria de alto nivel requiere algo más que 
-              intermediación: exige criterio, discreción y un profundo conocimiento del mercado patrimonial madrileño. 
-              Nuestro equipo combina experiencia en el sector inmobiliario con formación en derecho, finanzas y 
-              arquitectura para ofrecer un acompañamiento verdaderamente integral.
+              En IberCorp contamos con más de 15 años de experiencia en la gestión y comercialización de propiedades en las zonas más exclusivas de Madrid y sus alrededores. Trabajamos con una cartera cuidadosamente seleccionada de activos inmobiliarios, muchos de ellos fuera del mercado abierto, gestionados bajo criterios de discreción y confianza.
             </p>
             <p
               className="text-[#6B6560] text-base leading-[1.85] text-justify"
               style={{ fontFamily: "var(--font-body)", fontWeight: 300 }}
             >
-              Trabajamos con una cartera selecta de propiedades en las ubicaciones más codiciadas de Madrid — 
-              Barrio de Salamanca, Jerónimos, Justicia, Almagro, La Moraleja y Pozuelo de Alarcón — y mantenemos 
-              acceso a operaciones off-market que no se encuentran en el mercado abierto.
+              Nuestro cliente es exigente y valora la privacidad, la seguridad en cada decisión y un acompañamiento profesional a la altura de la operación. Asesoramos tanto a compradores finales como a inversores y estructuras patrimoniales que buscan activos singulares, bien ubicados y con valor a largo plazo.
             </p>
             <p
               className="text-[#6B6560] text-base leading-[1.85] text-justify"
               style={{ fontFamily: "var(--font-body)", fontWeight: 300 }}
             >
-              Cada operación es tratada con la máxima confidencialidad. No buscamos volumen: buscamos resultados 
-              que satisfagan las expectativas de clientes exigentes que valoran su patrimonio y su tiempo.
+              Cada propiedad que gestionamos responde a un estándar claro: calidad, ubicación y potencial. Colaboramos con propietarios que priorizan la confidencialidad y con clientes que buscan acceder a oportunidades que no se encuentran en los canales tradicionales.
+            </p>
+            <p
+              className="text-[#6B6560] text-base leading-[1.85] text-justify"
+              style={{ fontFamily: "var(--font-body)", fontWeight: 300 }}
+            >
+              En IberCorp entendemos cada operación como un proceso que requiere criterio, precisión y una gestión impecable.
             </p>
           </div>
         </div>
