@@ -1,9 +1,12 @@
 import { useEffect, useRef, useMemo, useState } from "react";
 import PropertyCard from "@/components/PropertyCard";
+import PropertySidebar from "@/components/PropertySidebar";
+import PropertiesCategoryMenu from "@/components/PropertiesCategoryMenu";
 import { properties as staticProperties, zones, Property } from "@/lib/properties";
+import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "wouter";
 
 export default function Propiedades() {
-  const sectionRef = useRef<HTMLElement>(null);
   const [dbProperties, setDbProperties] = useState<Property[]>([]);
 
   // Obtener el parámetro de zona de la URL usando window.location.search
@@ -12,7 +15,7 @@ export default function Propiedades() {
 
   // Scroll al inicio cuando cambia la zona
   useEffect(() => {
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [selectedZone]);
 
   // Cargar propiedades de la base de datos
@@ -40,34 +43,13 @@ export default function Propiedades() {
     fetchProperties();
   }, []);
 
-  // Animación de entrada
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("animate-in");
-          }
-        });
-      },
-      { threshold: 0.05 }
-    );
-    if (sectionRef.current) observer.observe(sectionRef.current);
-    return () => observer.disconnect();
-  }, [dbProperties, staticProperties]);
-
   // Combinar (De-duplicar por ID, priorizar datos de DB pero mantener fotos estáticas si faltan)
   const allProperties = useMemo(() => {
     const propertyMap = new Map<string, Property>();
-
-    // Primero añadimos las estáticas (que tienen las fotos buenas)
     staticProperties.forEach(p => propertyMap.set(p.id, p));
-
-    // Luego procesamos las de la DB
     dbProperties.forEach(p => {
       const existing = propertyMap.get(p.id);
       if (existing) {
-        // Si ya existe, fusionamos. Mantenemos las fotos estáticas si la DB no tiene imágenes reales
         propertyMap.set(p.id, {
           ...existing,
           ...p,
@@ -76,69 +58,112 @@ export default function Propiedades() {
             : existing.images
         });
       } else {
-        // Si es nueva (ej. del bot), la añadimos directamente
         propertyMap.set(p.id, p);
       }
     });
-
     return Array.from(propertyMap.values());
   }, [dbProperties, staticProperties]);
 
-  // Filtrar
+  // Filtrar por zona principal o sub-zona
   const filteredProperties = useMemo(() => {
-    if (!selectedZone) return allProperties;
-    return allProperties.filter(p => p.zone === selectedZone);
+    if (!selectedZone) return [];
+    
+    // Si la zona seleccionada es una zona padre (ej. madrid-capital)
+    // mostramos todas las propiedades de sus hijos también
+    const childZones = zones.filter(z => z.parent === selectedZone).map(z => z.id);
+    const zonesToInclude = [selectedZone, ...childZones];
+    
+    return allProperties.filter(p => zonesToInclude.includes(p.zone));
   }, [selectedZone, allProperties]);
 
   const currentZone = zones.find(z => z.id === selectedZone);
-  const title = currentZone ? currentZone.name : "Propiedades";
-  const subtitle = currentZone ? currentZone.description : "Selección de inmuebles exclusivos en las mejores ubicaciones de Madrid.";
 
   return (
-    <div className="min-h-screen pt-20">
-      <div className="py-16 md:py-24 px-6 md:px-12 text-center bg-[#FAFAF7]">
-        <span
-          className="text-[11px] tracking-[0.2em] text-[#B8A07E] uppercase block mb-3"
-          style={{ fontFamily: "var(--font-heading)" }}
-        >
-          CARTERA EXCLUSIVA
-        </span>
-        <h1
-          className="text-3xl md:text-5xl font-light text-[#2C2C2C] tracking-wide mb-4"
-          style={{ fontFamily: "var(--font-display)" }}
-        >
-          {title}
-        </h1>
-        <div className="gold-line mb-6" />
-        <p className="text-[#6B6560] text-base max-w-xl mx-auto leading-relaxed">
-          {subtitle}
-        </p>
-      </div>
-
-      <section ref={sectionRef} className="fade-section py-16 md:py-24 px-6 md:px-12">
-        <div className="max-w-[1400px] mx-auto">
-          {filteredProperties.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
-              {filteredProperties.map((property, i) => (
-                <div key={property.id} className="fade-child" style={{ transitionDelay: `${i * 100}ms` }}>
-                  <PropertyCard property={property} />
-                </div>
-              ))}
+    <div className="min-h-screen pt-24 bg-white pb-20">
+      <AnimatePresence mode="wait">
+        {!selectedZone ? (
+          <motion.div 
+            key="menu"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex flex-col items-center"
+          >
+            {/* Header Introductorio para el Menú */}
+            <div className="w-full py-16 md:py-24 px-6 md:px-12 text-center bg-[#FAFAF7] border-b border-gray-50 mb-12">
+              <span className="text-[10px] tracking-[0.4em] text-[#B8A07E] uppercase block mb-4 font-semibold">
+                CARTERA PRIVADA
+              </span>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-light text-[#2C2C2C] tracking-[0.1em] mb-6 uppercase" style={{ fontFamily: "var(--font-display)" }}>
+                Propiedades
+              </h1>
+              <div className="gold-line mb-8 mx-auto" />
+              <p className="text-[#6B6560] text-base md:text-lg max-w-2xl mx-auto leading-relaxed font-light">
+                Selección exclusiva de inmuebles de alto standing en las ubicaciones más prestigiosas de Madrid y zonas costeras prime.
+              </p>
             </div>
-          ) : (
-            <div className="text-center py-16">
-              <p className="text-[#6B6560] text-lg">No hay propiedades disponibles en esta zona.</p>
-            </div>
-          )}
-        </div>
-      </section>
 
-      <style>{`
-        .fade-section { opacity: 0; transform: translateY(30px); transition: all 0.7s ease; }
-        .fade-section.animate-in { opacity: 1; transform: translateY(0); }
-        .fade-child { opacity: 0; transform: translateY(20px); transition: all 0.6s ease; }
-        .fade-section.animate-in .fade-child { opacity: 1; transform: translateY(0); }
-      `}</style>
+            <div className="max-w-[1400px] w-full mx-auto px-6 md:px-12">
+              <PropertiesCategoryMenu />
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div 
+            key="list"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="max-w-[1500px] mx-auto px-6 md:px-12 lg:py-12"
+          >
+            <div className="flex flex-col lg:flex-row gap-16">
+              {/* Barra Lateral: Prioridad alta en móvil (aparece arriba o con botón) */}
+              <div className="order-1 lg:order-last">
+                <PropertySidebar activeZone={selectedZone} />
+              </div>
+
+              {/* Listado de Propiedades */}
+              <main className="flex-1 order-2 lg:order-first">
+                <header className="mb-12 pt-4">
+                  <span className="text-[10px] tracking-[0.3em] text-[#B8A07E] uppercase font-bold mb-2 block">
+                    {selectedZone === 'singulares' ? 'IBERCORP UNIQUE' : 'DISTRITO'}
+                  </span>
+                  <h2 className="text-3xl md:text-4xl font-light tracking-[0.15em] text-[#2C2C2C] uppercase mb-4" style={{ fontFamily: "var(--font-display)" }}>
+                    {currentZone?.name || "Resultados"}
+                  </h2>
+                  <div className="w-20 h-px bg-[#B8A07E] mb-6" />
+                  <p className="text-gray-500 font-light leading-relaxed max-w-2xl">
+                    {currentZone?.description}
+                  </p>
+                </header>
+
+                {filteredProperties.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    {filteredProperties.map((property, i) => (
+                      <motion.div 
+                        key={property.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.1 }}
+                      >
+                        <PropertyCard property={property} />
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-32 text-center border border-dashed border-gray-100 rounded-lg">
+                    <p className="text-gray-400 font-light text-lg">No se han encontrado propiedades activas en esta sección.</p>
+                    <Link href="/propiedades">
+                      <button className="mt-6 px-8 py-3 border border-gray-200 text-xs tracking-widest uppercase hover:bg-gray-50 transition-all">
+                        Volver al menú
+                      </button>
+                    </Link>
+                  </div>
+                )}
+              </main>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
