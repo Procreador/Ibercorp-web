@@ -110,180 +110,128 @@ export function initBot() {
 
       const systemPrompt = `
       Eres un asistente inmobiliario experto de la empresa Ibercorp.
-      Extrae los siguientes datos del texto y devuélvelos en formato JSON estructurado:
+      Tu tarea es gestionar el catálogo de propiedades a través de lenguaje natural (voz o texto).
+      
+      Debes extraer los siguientes datos y devolver ÚNICAMENTE un JSON:
       {
         "action": "create" | "update" | "delete",
-        "reference": "string (ID, Referencia o TÍTULO de la propiedad a modificar/borrar)",
+        "reference": "string (La referencia, ID, o fragmento del título que el usuario use para identificar el piso)",
         "property": {
-          "title": "string (OBLIGATORIO para 'create'. Genera uno atractivo si falta)",
-          ...
+          "title": "string (Atractivo y profesional)",
+          "description": "string (Crea una descripción seductora basada en los datos)",
+          "price": number,
+          "sqm": number,
+          "bedrooms": number,
+          "bathrooms": number,
+          "zone": "string (Ej: almagro, jeronimos, salamanca, la-moraleja...)",
+          "type": "Venta" | "Alquiler",
+          "reference": "string (La referencia oficial si se menciona)"
         }
       }
-      Reglas críticas para 'update' y 'delete':
-      1. El campo 'reference' es VITAL. Pon ahí lo que el usuario use para identificar el piso (ej: el título exacto, la dirección, o la referencia técnica). Si dice 'López de Hoyos', pon 'López de Hoyos' en 'reference'.
-      2. No devuelvas 'reference' vacío si el usuario ha nombrado el piso de alguna forma.
-      3. Devuelve SOLO el JSON, sin markdown.
+
+      REGLAS DE ORO:
+      1. Para 'delete' o 'update', pon en 'reference' EXACTAMENTE lo que diga el usuario (ej: "Ref-123", "Piso de Velázquez", "Velázquez 45").
+      2. Para 'create', si faltan datos, usa tu conocimiento para que el anuncio quede "bonito".
+      3. Si el usuario dice "elimina", "borra", "quita", la acción es 'delete'.
+      4. Si el usuario describe un piso nuevo, la acción es 'create'.
+      5. Responde SOLO con el JSON. No añadas explicaciones.
       `;
 
       const completion = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Contexto actual: El usuario está viendo la web de Ibercorp.\nMensaje: ${text}` }
+          { role: "user", content: `Contexto: Gestión de catálogo Ibercorp.\nMensaje del usuario: ${text}` }
         ],
+        response_format: { type: "json_object" }
       });
 
-      let jsonStr = completion.choices[0].message.content?.trim() || "{}";
-      if (jsonStr.startsWith("```json")) {
-        jsonStr = jsonStr.replace(/```json/g, "").replace(/```/g, "").trim();
-      }
+      const orderData = JSON.parse(completion.choices[0].message.content || "{}");
 
-      const orderData = JSON.parse(jsonStr);
+      // Log para debug
+      console.log("Comando IA:", orderData);
 
-      // Log de diagnóstico para el desarrollador (se envía al chat)
-      console.log(`Bot Action: ${orderData.action}, Search: ${orderData.reference}`);
+      await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, "⚡ Ejecutando operación...");
 
-      await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, "⚡ Ejecutando operación en la base de datos...");
+      const normalize = (s: string | undefined) => 
+        (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, '');
 
       if (orderData.action === "create") {
-        if (!orderData.property.id && !orderData.property.reference) {
-             orderData.property.id = "prop-" + Date.now();
-             orderData.property.reference = "REF-" + Math.floor(Math.random() * 10000);
-        } else if (orderData.property.reference) {
-             orderData.property.id = orderData.property.reference.toLowerCase().replace(/ /g, '-');
+        // Generación de IDs si no existen
+        if (!orderData.property.reference) {
+          orderData.property.reference = "IC-" + Math.floor(1000 + Math.random() * 9000);
         }
+        orderData.property.id = normalize(orderData.property.reference);
         
         const formData = new FormData();
         formData.append('data', JSON.stringify(orderData.property));
         
-        // Añadir imágenes pendientes
         const images = userPendingImages[ctx.from.id] || [];
         for (const imgPath of images) {
           formData.append('images', fs.createReadStream(imgPath));
         }
 
         try {
-          const res = await axios.post(apiUrl, formData, {
+          await axios.post(apiUrl, formData, {
             headers: {
               'Authorization': `Bearer ${API_TOKEN}`,
               ...formData.getHeaders()
             }
           });
           
-          // Limpiar imágenes tras éxito
           delete userPendingImages[ctx.from.id];
-          for (const imgPath of images) {
-             if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
-          }
-
-          await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `✅ ¡Operación exitosa!\nPropiedad creada: ${orderData.property.title}\nRef: ${orderData.property.reference}`);
+          await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `✅ ¡Publicado!\nPropiedad: ${orderData.property.title}\nRef: ${orderData.property.reference}`);
         } catch (err: any) {
-           await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ Fallo en la API al crear: ${err.response?.statusText || err.message}`);
+          await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ Error en el servidor al publicar.`);
         }
-      } else if (orderData.action === "update") {
+      } else if (orderData.action === "update" || orderData.action === "delete") {
          try {
-           // Primero buscamos la propiedad para obtener su ID real
-           const allPropsRes = await axios.get(apiUrl);
-           const allProps = allPropsRes.data;
-           
-           await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `🔍 Buscando "${orderData.reference}" en catálogo de ${allProps.length} propiedades...`);
-
-           // Normalización robusta (ignora acentos, espacios y caracteres especiales)
-           const normalize = (s: string | undefined) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, '');
-           const searchQuery = normalize(orderData.reference);
-           const searchWords = searchQuery.split(/\s+/).filter(w => w.length > 2);
-           
-           const found = allProps.find((p: any) => {
-             const pId = normalize(p.id);
-             const pRef = normalize(p.reference);
-             const pTitle = normalize(p.title);
-             
-             // Coincidencia exacta o parcial
-             const matchesAny = (tag: string) => tag.includes(searchQuery) || searchQuery.includes(tag) && tag.length > 3;
-             if (matchesAny(pId) || matchesAny(pRef) || matchesAny(pTitle)) return true;
-             
-             // Coincidencia por palabras (si el usuario dice solo una palabra clave)
-             if (searchWords.length > 0 && searchWords.some(w => pTitle.includes(w) || pRef.includes(w))) return true;
-             
-             return false;
-           });
-
-           if (!found) {
-             await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ No se encontró ninguna propiedad que coincida con "${orderData.reference}".`);
-             return;
-           }
-
-           const formData = new FormData();
-           formData.append('data', JSON.stringify(orderData.property));
-           
-           const images = userPendingImages[ctx.from.id] || [];
-           for (const imgPath of images) {
-             formData.append('images', fs.createReadStream(imgPath));
-           }
-
-           const res = await axios.put(`${apiUrl}/${found.id}`, formData, {
-             headers: {
-               'Authorization': `Bearer ${API_TOKEN}`,
-               ...formData.getHeaders()
-             }
-           });
-           
-           delete userPendingImages[ctx.from.id];
-           for (const imgPath of images) {
-              if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
-           }
-
-           await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `✅ ¡Propiedad "${found.title}" actualizada con éxito!`);
-         } catch (err: any) {
-           console.error(err);
-           await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ Fallo al actualizar la propiedad: ${err.response?.statusText || err.message}`);
-         }
-      } else if (orderData.action === "delete") {
-         try {
-            // Primero buscamos la propiedad para obtener su ID real
             const allPropsRes = await axios.get(apiUrl);
             const allProps = allPropsRes.data;
             
-            await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `🔍 Buscando "${orderData.reference}" para borrar en catálogo de ${allProps.length} propiedades...`);
-
-            // Normalización robusta (ignora acentos, espacios y caracteres especiales)
-            const normalize = (s: string | undefined) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, '');
-            const searchQuery = normalize(orderData.reference);
-            const searchWords = searchQuery.split(/\s+/).filter(w => w.length > 2);
+            const query = normalize(orderData.reference);
             
             const found = allProps.find((p: any) => {
               const pId = normalize(p.id);
               const pRef = normalize(p.reference);
               const pTitle = normalize(p.title);
               
-              const matchesAny = (tag: string) => tag.includes(searchQuery) || searchQuery.includes(tag) && tag.length > 3;
-              if (matchesAny(pId) || matchesAny(pRef) || matchesAny(pTitle)) return true;
-              
-              if (searchWords.length > 0 && searchWords.some(w => pTitle.includes(w) || pRef.includes(w))) return true;
-              
-              return false;
+              // Coincidencia más agresiva
+              return pId.includes(query) || pRef.includes(query) || pTitle.includes(query) || query.includes(pRef);
             });
 
-           if (!found) {
-             await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ No se pudo eliminar: No se encontró la propiedad "${orderData.reference}".`);
-             return;
-           }
+            if (!found) {
+              await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ No he encontrado ninguna propiedad que se llame o tenga la referencia "${orderData.reference}".`);
+              return;
+            }
 
-           const res = await fetch(`${apiUrl}/${found.id}`, {
-              method: 'DELETE',
-              headers: {
-                'Authorization': `Bearer ${API_TOKEN}`
+            if (orderData.action === "delete") {
+              await axios.delete(`${apiUrl}/${found.id}`, {
+                headers: { 'Authorization': `Bearer ${API_TOKEN}` }
+              });
+              await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `✅ Propiedad "${found.title}" (Ref: ${found.reference}) eliminada.`);
+            } else {
+              // Action: Update
+              const formData = new FormData();
+              formData.append('data', JSON.stringify({ ...found, ...orderData.property }));
+              
+              const images = userPendingImages[ctx.from.id] || [];
+              for (const imgPath of images) {
+                formData.append('images', fs.createReadStream(imgPath));
               }
-           });
 
-           if (res.ok) {
-             await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `✅ Propiedad "${found.title}" eliminada del catálogo.`);
-           } else {
-             await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ No se pudo eliminar la propiedad: ${res.statusText}`);
-           }
+              await axios.put(`${apiUrl}/${found.id}`, formData, {
+                headers: {
+                  'Authorization': `Bearer ${API_TOKEN}`,
+                  ...formData.getHeaders()
+                }
+              });
+              
+              delete userPendingImages[ctx.from.id];
+              await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `✅ Propiedad "${found.title}" actualizada correctamente.`);
+            }
          } catch (err: any) {
-           console.error(err);
-           await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ Error al intentar eliminar: ${err.message}`);
+           await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ Error al procesar ${orderData.action}.`);
          }
       } else {
          await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❓ Acción no reconocida: ${orderData.action}`);

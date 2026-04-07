@@ -4,23 +4,7 @@ import { LOGO_URL, LOGO_WHITE_URL } from "@/lib/properties";
 import { Menu, X, ChevronDown } from "lucide-react";
 
 const navLinks = [
-  {
-    label: "PROPIEDADES",
-    href: "/propiedades",
-    dropdown: [
-      { label: "MADRID (CAPITAL)", href: "/propiedades?zona=madrid-capital", separator: false, bold: true },
-      { label: "ALMAGRO", href: "/propiedades?zona=almagro", separator: false, bold: false },
-      { label: "BARRIO DE SALAMANCA", href: "/propiedades?zona=salamanca", separator: false, bold: false },
-      { label: "JERÓNIMOS", href: "/propiedades?zona=jeronimos", separator: false, bold: false },
-      { label: "JUSTICIA", href: "/propiedades?zona=justicia", separator: true, bold: false },
-      { label: "ÁREAS RESIDENCIALES", href: "/propiedades?zona=areas-residenciales", separator: false, bold: true },
-      { label: "LA MORALEJA", href: "/propiedades?zona=la-moraleja", separator: false, bold: false },
-      { label: "POZUELO DE ALARCÓN", href: "/propiedades?zona=pozuelo", separator: true, bold: false },
-      { label: "ZONAS COSTERAS", href: "/propiedades?zona=zonas-costeras", separator: false, bold: true },
-      { label: "OTRAS ZONAS", href: "/propiedades?zona=otras-zonas", separator: false, bold: true },
-      { label: "PROPIEDADES SINGULARES", href: "/propiedades?zona=singulares", separator: false, bold: true },
-    ],
-  },
+  { label: "PROPIEDADES", href: "/propiedades" },
   { label: "NOSOTROS", href: "/nosotros" },
   { label: "CONTACTO", href: "/contacto" },
 ];
@@ -70,54 +54,15 @@ export default function Navbar() {
           </Link>
 
           <div className="hidden lg:flex items-center gap-10">
-            {navLinks.map((link) =>
-              link.dropdown ? (
-                <div
-                  key={link.label}
-                  className="relative group"
-                  onMouseEnter={() => setDropdownOpen(true)}
-                  onMouseLeave={() => setDropdownOpen(false)}
-                >
-                  <button
-                    onClick={() => setDropdownOpen(!dropdownOpen)}
-                    className={`nav-link flex items-center gap-1.5 py-2 ${textColor} cursor-pointer bg-transparent border-none outline-none`}
-                  >
-                    {link.label}
-                    <ChevronDown className="w-3.5 h-3.5 opacity-60 transition-transform group-hover:rotate-180" />
-                  </button>
-                  <div className="absolute top-full left-0 w-full h-3" />
-                  {dropdownOpen && (
-                    <div className="absolute top-[calc(100%+12px)] left-0 z-50">
-                      <div className="bg-white rounded-lg shadow-xl border border-gray-100 min-w-[260px] py-2 overflow-hidden">
-                        {link.dropdown.map((item, i) => (
-                          <div key={i}>
-                            <a
-                              href={item.href}
-                              onClick={handleDropdownItemClick}
-                              className={`block px-5 py-2.5 text-[12px] tracking-[0.1em] text-[#2C2C2C] hover:bg-[#FAFAF7] hover:text-[#B8A07E] transition-colors ${item.bold ? 'font-semibold' : ''}`}
-                              style={{ fontFamily: "var(--font-heading)" }}
-                            >
-                              {item.label}
-                            </a>
-                            {item.separator && (
-                              <div className="mx-4 my-1 border-t border-gray-100" />
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  className={`nav-link py-2 ${textColor}`}
-                >
-                  {link.label}
-                </Link>
-              )
-            )}
+            {navLinks.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                className={`nav-link py-2 ${textColor}`}
+              >
+                {link.label}
+              </Link>
+            ))}
           </div>
 
           <button
@@ -144,20 +89,6 @@ export default function Navbar() {
               >
                 {link.label}
               </Link>
-              {link.dropdown && (
-                <div className="pl-4 mt-2 flex flex-col gap-2 border-l border-[#B8A07E]/30">
-                  {link.dropdown.map((item, i) => (
-                    <a
-                      key={i}
-                      href={item.href}
-                      className={`text-[11px] tracking-[0.1em] text-[#6B6560] hover:text-[#B8A07E] transition-colors py-1 ${item.bold ? 'font-semibold' : ''}`}
-                      style={{ fontFamily: "var(--font-heading)" }}
-                    >
-                      {item.label}
-                    </a>
-                  ))}
-                </div>
-              )}
             </div>
           ))}
         </div>
