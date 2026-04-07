@@ -87,24 +87,18 @@ export default function Propiedades() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="flex flex-col items-center"
+            className="max-w-[1500px] mx-auto px-6 md:px-12 py-12"
           >
-            {/* Header Introductorio para el Menú */}
-            <div className="w-full py-16 md:py-24 px-6 md:px-12 text-center bg-[#FAFAF7] border-b border-gray-50 mb-12">
-              <span className="text-[10px] tracking-[0.4em] text-[#B8A07E] uppercase block mb-4 font-semibold">
-                CARTERA PRIVADA
-              </span>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-light text-[#2C2C2C] tracking-[0.1em] mb-6 uppercase" style={{ fontFamily: "var(--font-display)" }}>
-                Propiedades
-              </h1>
-              <div className="gold-line mb-8 mx-auto" />
-              <p className="text-[#6B6560] text-base md:text-lg max-w-2xl mx-auto leading-relaxed font-light">
-                Selección exclusiva de inmuebles de alto standing en las ubicaciones más prestigiosas de Madrid y zonas costeras prime.
-              </p>
-            </div>
+            <div className="flex flex-col lg:flex-row gap-16">
+              {/* Columna Principal: Menú de Categorías */}
+              <div className="flex-1 order-2 lg:order-first">
+                <PropertiesCategoryMenu />
+              </div>
 
-            <div className="max-w-[1400px] w-full mx-auto px-6 md:px-12">
-              <PropertiesCategoryMenu />
+              {/* Columna Lateral: Buscador y Filtros */}
+              <div className="w-full lg:w-[350px] order-1 lg:order-last">
+                <PropertySidebar activeZone={null} />
+              </div>
             </div>
           </motion.div>
         ) : (
@@ -116,11 +110,6 @@ export default function Propiedades() {
             className="max-w-[1500px] mx-auto px-6 md:px-12 lg:py-12"
           >
             <div className="flex flex-col lg:flex-row gap-16">
-              {/* Barra Lateral: Prioridad alta en móvil (aparece arriba o con botón) */}
-              <div className="order-1 lg:order-last">
-                <PropertySidebar activeZone={selectedZone} />
-              </div>
-
               {/* Listado de Propiedades */}
               <main className="flex-1 order-2 lg:order-first">
                 <header className="mb-12 pt-4">
@@ -160,6 +149,11 @@ export default function Propiedades() {
                   </div>
                 )}
               </main>
+
+              {/* Barra Lateral: Filtros en modo listado */}
+              <div className="w-full lg:w-[350px] order-1 lg:order-last">
+                <PropertySidebar activeZone={selectedZone} />
+              </div>
             </div>
           </motion.div>
         )}
