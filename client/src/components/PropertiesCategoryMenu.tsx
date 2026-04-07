@@ -19,7 +19,7 @@ export default function PropertiesCategoryMenu() {
             className="relative overflow-hidden rounded-sm aspect-[16/8] shadow-sm"
           >
             <img 
-              src="/img/menu_propiedades/Cibeles - Atardecer Madrid.png" 
+              src="/img/menu_propiedades/Cibeles---Atardecer-Madrid.jpg" 
               alt="Madrid Capital"
               className="w-full h-full object-cover shadow-inner"
             />
