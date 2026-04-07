@@ -12,27 +12,31 @@ export default function PropertiesCategoryMenu() {
       {/* SECCIÓN 1: MADRID (CAPITAL) - HERO */}
       {madridZone && (
         <section className="space-y-8">
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1 }}
-            className="relative overflow-hidden rounded-sm aspect-[16/8] shadow-sm"
-          >
-            <img 
-              src="/img/menu_propiedades/Cibeles---Atardecer-Madrid.jpg" 
-              alt="Madrid Capital"
-              className="w-full h-full object-cover shadow-inner"
-            />
-          </motion.div>
+          <Link href={`/propiedades?zona=${madridZone.id}`}>
+            <div className="group cursor-pointer">
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1 }}
+                className="relative overflow-hidden rounded-sm aspect-[16/8] shadow-sm"
+              >
+                <img 
+                  src="/img/menu_propiedades/Cibeles---Atardecer-Madrid.jpg" 
+                  alt="Madrid Capital"
+                  className="w-full h-full object-cover shadow-inner transition-transform duration-700 group-hover:scale-105"
+                />
+              </motion.div>
 
-          <div className="text-center space-y-4 px-4">
-            <h2 className="text-3xl md:text-4xl font-light tracking-[0.2em] text-[#2C2C2C] uppercase" style={{ fontFamily: 'var(--font-display)' }}>
-              MADRID <span className="text-gray-400">(CAPITAL)</span>
-            </h2>
-            <p className="max-w-3xl mx-auto text-sm md:text-base text-[#6B6560] font-light leading-relaxed">
-              Madrid es uno de los mercados inmobiliarios más sólidos de Europa, con <span className="font-semibold text-[#2C2C2C]">una demanda constante</span>, <span className="font-semibold text-[#2C2C2C]">alta seguridad jurídica</span> y <span className="font-semibold text-[#2C2C2C]">una oferta limitada en ubicaciones prime</span>.
-            </p>
-          </div>
+              <div className="text-center space-y-4 px-4 mt-8">
+                <h2 className="text-3xl md:text-4xl font-light tracking-[0.2em] text-[#2C2C2C] uppercase group-hover:text-[#B8A07E] transition-colors" style={{ fontFamily: 'var(--font-display)' }}>
+                  MADRID <span className="text-gray-400 font-light">(CAPITAL)</span>
+                </h2>
+                <p className="max-w-3xl mx-auto text-sm md:text-base text-[#6B6560] font-light leading-relaxed">
+                  Madrid es uno de los mercados inmobiliarios más sólidos de Europa, con <span className="font-semibold text-[#2C2C2C]">una demanda constante</span>, <span className="font-semibold text-[#2C2C2C]">alta seguridad jurídica</span> y <span className="font-semibold text-[#2C2C2C]">una oferta limitada en ubicaciones prime</span>.
+                </p>
+              </div>
+            </div>
+          </Link>
         </section>
       )}
 

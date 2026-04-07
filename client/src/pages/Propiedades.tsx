@@ -4,14 +4,18 @@ import PropertySidebar from "@/components/PropertySidebar";
 import PropertiesCategoryMenu from "@/components/PropertiesCategoryMenu";
 import { properties as staticProperties, zones, Property } from "@/lib/properties";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 
 export default function Propiedades() {
   const [dbProperties, setDbProperties] = useState<Property[]>([]);
+  const [location] = useLocation();
 
   // Obtener el parámetro de zona de la URL usando window.location.search
-  const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : "");
-  const selectedZone = searchParams.get('zona');
+  // Al usar useLocation(), el componente se renderiza cuando cambia la URL
+  const selectedZone = useMemo(() => {
+    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : "");
+    return params.get('zona');
+  }, [location]);
 
   // Scroll al inicio cuando cambia la zona
   useEffect(() => {
