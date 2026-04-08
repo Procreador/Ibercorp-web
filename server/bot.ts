@@ -4,6 +4,7 @@ import OpenAI from "openai";
 
 import fs from "fs";
 import path from "path";
+import os from "os";
 import axios from "axios";
 import FormData from "form-data";
 
@@ -53,7 +54,7 @@ export function initBot() {
       const buffer = Buffer.from(arrayBuffer);
 
       // OpenAI expects a file, we can use a temporary file or a custom File object
-      const tempFilePath = path.join(process.cwd(), `temp_${Date.now()}.ogg`);
+      const tempFilePath = path.join(os.tmpdir(), `temp_${Date.now()}.ogg`);
       fs.writeFileSync(tempFilePath, buffer);
 
       const transcription = await openai.audio.transcriptions.create({
@@ -61,7 +62,7 @@ export function initBot() {
         model: "whisper-1",
       });
 
-      fs.unlinkSync(tempFilePath); // Cleanup
+      try { fs.unlinkSync(tempFilePath); } catch (e) {} // Silent cleanup
 
       await processTextForProperty(ctx, transcription.text, msgMessage.message_id);
     } catch (e) {
@@ -95,7 +96,7 @@ export function initBot() {
         responseType: 'arraybuffer'
       });
       
-      const tempFilePath = path.join(process.cwd(), `temp_${Date.now()}_${Math.floor(Math.random() * 10000)}.jpg`);
+      const tempFilePath = path.join(os.tmpdir(), `temp_${Date.now()}_${Math.floor(Math.random() * 10000)}.jpg`);
       fs.writeFileSync(tempFilePath, response.data);
       
       if (!userPendingImages[ctx.from.id]) {
@@ -126,7 +127,7 @@ export function initBot() {
       
       Debes extraer los siguientes datos y devolver ÚNICAMENTE un JSON:
       {
-        "action": "create" | "update" | "delete",
+        "action": "create" | "update" | "delete" | "query",
         "reference": "string (La referencia, ID, o fragmento del título que el usuario use para identificar el piso)",
         "property": {
           "title": "string (Atractivo y profesional)",
@@ -145,8 +146,9 @@ export function initBot() {
       1. Para 'delete' o 'update', pon en 'reference' EXACTAMENTE lo que diga el usuario (ej: "Ref-123", "Piso de Velázquez", "Velázquez 45").
       2. Para 'create', si faltan datos, usa tu conocimiento para que el anuncio quede "bonito".
       3. Si el usuario dice "elimina", "borra", "quita", la acción es 'delete'.
-      4. Si el usuario describe un piso nuevo, la acción es 'create'.
-      5. Responde SOLO con el JSON. No añadas explicaciones.
+      4. Si el usuario describe un piso nuevo para subir/añadir, la acción es 'create'.
+      5. Si el usuario pregunta qué hay en una zona o quiere ver propiedades, la acción es 'query'.
+      6. Responde SOLO con el JSON. No añadas explicaciones.
       `;
 
       const completion = await openai.chat.completions.create({
@@ -244,6 +246,30 @@ export function initBot() {
             }
          } catch (err: any) {
            await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ Error al procesar ${orderData.action}.`);
+         }
+      } else if (orderData.action === "query") {
+         try {
+           const allPropsRes = await axios.get(apiUrl);
+           const allProps = allPropsRes.data;
+           
+           const queryZone = normalize(orderData.property?.zone);
+           
+           const filtered = allProps.filter((p: any) => {
+             if (!queryZone) return true;
+             return normalize(p.zone).includes(queryZone);
+           });
+
+           if (filtered.length === 0) {
+             await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `🧐 No he encontrado propiedades disponibles ${queryZone ? 'en ' + queryZone : 'en el catálogo'}.`);
+           } else {
+             let response = `🏘️ **He encontrado ${filtered.length} propiedades:**\n\n`;
+             filtered.forEach((p: any, i: number) => {
+               response += `${i+1}. **${p.title}**\n📍 ${p.zone} | 💰 ${new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(p.price)}\n🔑 Ref: ${p.reference}\n\n`;
+             });
+             await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, response, { parse_mode: 'Markdown' });
+           }
+         } catch (err: any) {
+           await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ Error al consultar el catálogo.`);
          }
       } else {
          await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❓ Acción no reconocida: ${orderData.action}`);
