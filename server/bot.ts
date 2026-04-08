@@ -16,8 +16,14 @@ const userPendingImages: Record<number, string[]> = {};
 const { TELEGRAM_BOT_TOKEN, OPENAI_API_KEY, API_TOKEN, PORT } = process.env;
 
 export function initBot() {
+  console.log("🚀 [Bot] Invocando initBot()...");
+  console.log("🚀 [Bot] Verificando variables de entorno:");
+  console.log(`   - TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN ? '✅ Presente (' + TELEGRAM_BOT_TOKEN.substring(0, 5) + '...)' : '❌ Ausente'}`);
+  console.log(`   - OPENAI_API_KEY: ${OPENAI_API_KEY ? '✅ Presente' : '❌ Ausente'}`);
+  console.log(`   - API_TOKEN: ${API_TOKEN ? '✅ Presente' : '❌ Ausente'}`);
+
   if (!TELEGRAM_BOT_TOKEN || !OPENAI_API_KEY) {
-    console.warn("⚠️ Telegram Bot Token or OpenAI API Key missing. Bot won't start.");
+    console.warn("⚠️ [Bot] Faltan variables críticas. El bot no se iniciará.");
     return;
   }
 
@@ -26,7 +32,13 @@ export function initBot() {
   const apiUrl = `http://127.0.0.1:${PORT || 3000}/api/properties`;
 
   bot.start((ctx) => {
+    console.log(`👋 [Bot] /start recibido de @${ctx.from.username || ctx.from.id}`);
     ctx.reply("👋 ¡Hola! Soy el agente conversacional de IBERCORP. Envíame un mensaje de voz o texto para añadir, modificar o eliminar propiedades.");
+  });
+
+  bot.command("ping", (ctx) => {
+    console.log("🏓 [Bot] /ping recibido");
+    ctx.reply("pong 🏓 - El bot está vivo y conectado.");
   });
 
   bot.on(message("voice"), async (ctx) => {
@@ -243,7 +255,11 @@ export function initBot() {
     }
   }
 
-  bot.launch().then(() => console.log("🤖 Telegram Bot running")).catch(console.error);
+  bot.launch()
+    .then(() => console.log("🤖 [Bot] Conexión establecida con Telegram exitosamente."))
+    .catch((err) => {
+      console.error("❌ [Bot] Error crítico al lanzar el bot:", err);
+    });
 
   process.once("SIGINT", () => bot.stop("SIGINT"));
   process.once("SIGTERM", () => bot.stop("SIGTERM"));

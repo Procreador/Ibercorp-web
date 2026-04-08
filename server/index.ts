@@ -62,7 +62,7 @@ async function startServer() {
     
     // Launch Telegram Bot
     if (process.env.NODE_ENV === "production" || process.env.TELEGRAM_BOT_TOKEN) {
-      console.log("Starting Telegram Bot...");
+      console.log("🚀 [Server] Solicitando inicio del bot de Telegram...");
       initBot();
     }
   });
