@@ -15,7 +15,7 @@ RUN npm install -g node-gyp
 WORKDIR /app
 
 # Cache bust
-ARG CACHEBUST=20260228_006
+ARG CACHEBUST=20260409_001
 
 # Copy all files first
 COPY . .
