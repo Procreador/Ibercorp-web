@@ -1,17 +1,84 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "wouter";
-import { properties } from "@/lib/properties";
-import { MapPin, Maximize, BedDouble, Bath, Calendar, ChevronLeft, ChevronRight, X, ArrowLeft } from "lucide-react";
+import { properties as staticProperties, Property } from "@/lib/properties";
+import { MapPin, Maximize, BedDouble, Bath, Calendar, ChevronLeft, ChevronRight, X, ArrowLeft, Loader2 } from "lucide-react";
 
 export default function PropertyDetail() {
   const { id } = useParams<{ id: string }>();
-  const property = properties.find((p) => p.id === id);
+  const [property, setProperty] = useState<Property | null>(null);
+  const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    
+    async function findProperty() {
+      setLoading(true);
+      try {
+        // Encontrar en estáticos (normalizado)
+        const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const targetId = normalize(id || "");
+        
+        const staticProp = staticProperties.find(p => normalize(p.id) === targetId);
+        
+        if (staticProp) {
+          setProperty(staticProp);
+          setLoading(false);
+          return;
+        }
+
+        // Si no está en estáticos, buscar en la API
+        const response = await fetch(`/api/properties/${id}`);
+        if (response.ok) {
+          const data = await response.json();
+          // Mapear campos de la DB a los del frontend si es necesario
+          const mapped: Property = {
+            ...data,
+            beds: data.bedrooms || data.beds || 0,
+            baths: data.bathrooms || data.baths || 0,
+            m2: data.size || data.m2 || 0,
+            ref: data.reference || data.ref || "REF",
+            tag: data.badge || data.tag || "NUEVO",
+            images: data.images && data.images.length > 0 ? data.images : ["/img/hero-001.jpg"]
+          };
+          setProperty(mapped);
+        } else {
+          // Intento desesperado: buscar en todas las propiedades de la API por si el ID directo falló por case-sensitivity
+          const allRes = await fetch('/api/properties');
+          if (allRes.ok) {
+            const all = await allRes.json();
+            const found = all.find((p: any) => normalize(p.id) === targetId || normalize(p.reference || "") === targetId);
+            if (found) {
+              const mapped: Property = {
+                ...found,
+                beds: found.bedrooms || 0,
+                baths: found.bathrooms || 0,
+                m2: found.size || 0,
+                ref: found.reference || "REF",
+                tag: found.badge || "NUEVO"
+              };
+              setProperty(mapped);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching property:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    findProperty();
   }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center pt-20">
+        <Loader2 className="w-8 h-8 text-[#B8A07E] animate-spin" />
+      </div>
+    );
+  }
 
   if (!property) {
     return (

@@ -10,9 +10,10 @@ import FormData from "form-data";
 
 // Almacén temporal de imágenes por usuario
 const userPendingImages: Record<number, string[]> = {};
-
-
-
+// Timers para debouncing de álbumes
+const userTimers: Record<number, NodeJS.Timeout> = {};
+// Buffer de texto/caption por usuario
+const userPendingText: Record<number, string> = {};
 
 const { TELEGRAM_BOT_TOKEN, OPENAI_API_KEY, API_TOKEN, PORT } = process.env;
 
@@ -48,12 +49,10 @@ export function initBot() {
       const fileId = ctx.message.voice.file_id;
       const fileLink = await ctx.telegram.getFileLink(fileId);
       
-      // We need to fetch the file and pass it to OpenAI
       const response = await fetch(fileLink.toString());
       const arrayBuffer = await response.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
-      // OpenAI expects a file, we can use a temporary file or a custom File object
       const tempFilePath = path.join(os.tmpdir(), `temp_${Date.now()}.ogg`);
       fs.writeFileSync(tempFilePath, buffer);
 
@@ -62,7 +61,7 @@ export function initBot() {
         model: "whisper-1",
       });
 
-      try { fs.unlinkSync(tempFilePath); } catch (e) {} // Silent cleanup
+      try { fs.unlinkSync(tempFilePath); } catch (e) {} 
 
       await processTextForProperty(ctx, transcription.text, msgMessage.message_id);
     } catch (e) {
@@ -73,23 +72,36 @@ export function initBot() {
 
   bot.on(message("text"), async (ctx) => {
     try {
-      const msgMessage = await ctx.reply("📝 Texto recibido. Procesando...");
-      await processTextForProperty(ctx, ctx.message.text, msgMessage.message_id);
+      const userId = ctx.from.id;
+      const text = ctx.message.text;
+
+      // Resetear timer de álbum si existiera
+      if (userTimers[userId]) clearTimeout(userTimers[userId]);
+      
+      userPendingText[userId] = (userPendingText[userId] || "") + "\n" + text;
+
+      userTimers[userId] = setTimeout(async () => {
+        const fullText = userPendingText[userId].trim();
+        delete userPendingText[userId];
+        delete userTimers[userId];
+        
+        const msgMessage = await ctx.reply("📝 Procesando información...");
+        await processTextForProperty(ctx, fullText, msgMessage.message_id);
+      }, 1500); // Esperar 1.5s por si hay más mensajes o fotos
+
     } catch (e) {
       console.error(e);
-      ctx.reply("❌ Hubo un error procesando el texto.");
+      ctx.reply("❌ Hubo un error al recibir el texto.");
     }
   });
 
   bot.on(message("photo"), async (ctx) => {
     try {
-      // Telegram sends multiple sizes, get the last one (highest quality)
+      const userId = ctx.from.id;
       const photo = ctx.message.photo.pop();
       if (!photo) return;
       
       const fileLink = await ctx.telegram.getFileLink(photo.file_id);
-      
-      // Axios works better for binary downloads
       const response = await axios({
         url: fileLink.toString(),
         method: 'GET',
@@ -99,18 +111,32 @@ export function initBot() {
       const tempFilePath = path.join(os.tmpdir(), `temp_${Date.now()}_${Math.floor(Math.random() * 10000)}.jpg`);
       fs.writeFileSync(tempFilePath, response.data);
       
-      if (!userPendingImages[ctx.from.id]) {
-        userPendingImages[ctx.from.id] = [];
-      }
-      userPendingImages[ctx.from.id].push(tempFilePath);
+      if (!userPendingImages[userId]) userPendingImages[userId] = [];
+      userPendingImages[userId].push(tempFilePath);
       
-      ctx.reply(`📸 Imagen ${userPendingImages[ctx.from.id].length} guardada en memoria. Sigue subiendo fotos o envía el texto/audio con los detalles.`);
+      // Feedback inmediato
+      ctx.reply(`📸 Imagen ${userPendingImages[userId].length} guardada.`);
       
-      // Procesar texto si viene incluido como pie de foto (caption)
+      // Manejar caption y debounce
       if (ctx.message.caption) {
-        const msgMessage = await ctx.reply("📝 Texto adjunto a la foto recibido. Procesando...");
-        await processTextForProperty(ctx, ctx.message.caption, msgMessage.message_id);
+        userPendingText[userId] = (userPendingText[userId] || "") + "\n" + ctx.message.caption;
       }
+
+      if (userTimers[userId]) clearTimeout(userTimers[userId]);
+      
+      userTimers[userId] = setTimeout(async () => {
+        const fullText = userPendingText[userId]?.trim();
+        delete userPendingText[userId];
+        delete userTimers[userId];
+
+        if (fullText) {
+          const msgMessage = await ctx.reply("📝 Procesando álbum y descripción...");
+          await processTextForProperty(ctx, fullText, msgMessage.message_id);
+        } else {
+          ctx.reply("🖼️ Fotos guardadas. Ahora envía el texto o audio con los detalles para publicar.");
+        }
+      }, 2000); // 2 segundos de paciencia para álbumes
+
     } catch (e) {
       console.error(e);
       ctx.reply("❌ Hubo un error procesando la imagen.");
@@ -123,59 +149,65 @@ export function initBot() {
 
       const systemPrompt = `
       Eres un asistente inmobiliario experto de la empresa Ibercorp.
-      Tu tarea es gestionar el catálogo de propiedades a través de lenguaje natural (voz o texto).
+      Tu tarea es gestionar el catálogo de propiedades a través de lenguaje natural.
       
-      Debes extraer los siguientes datos y devolver ÚNICAMENTE un JSON:
+      Debes extraer los datos y devolver ÚNICAMENTE un JSON:
       {
         "action": "create" | "update" | "delete" | "query",
-        "reference": "string (La referencia, ID, o fragmento del título que el usuario use para identificar el piso)",
+        "reference": "string (ID o Referencia, ej: IC-7038)",
         "property": {
-          "title": "string (Atractivo y profesional)",
-          "description": "string (Crea una descripción seductora basada en los datos)",
+          "title": "string",
+          "description": "string",
           "price": number,
           "sqm": number,
           "bedrooms": number,
           "bathrooms": number,
-          "zone": "string (Ej: almagro, jeronimos, salamanca, la-moraleja...)",
+          "zone": "string",
           "type": "Venta" | "Alquiler",
-          "reference": "string (La referencia oficial si se menciona)"
+          "reference": "string"
         }
       }
 
-      REGLAS DE ORO:
-      1. Para 'delete' o 'update', pon en 'reference' EXACTAMENTE lo que diga el usuario (ej: "Ref-123", "Piso de Velázquez", "Velázquez 45").
-      2. Para 'create', si faltan datos, usa tu conocimiento para que el anuncio quede "bonito".
-      3. Si el usuario dice "elimina", "borra", "quita", la acción es 'delete'.
-      4. Si el usuario describe un piso nuevo para subir/añadir, la acción es 'create'.
-      5. Si el usuario pregunta qué hay en una zona o quiere ver propiedades, la acción es 'query'.
-      6. Responde SOLO con el JSON. No añadas explicaciones.
+      REGLAS:
+      1. Para 'create', genera una referencia profesional si no existe (ej: IC-XXXX).
+      2. Normaliza la referencia: siempre en MAYÚSCULAS y sin espacios (ej: IC-7038).
+      3. Responde SOLO con el JSON.
       `;
 
       const completion = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Contexto: Gestión de catálogo Ibercorp.\nMensaje del usuario: ${text}` }
+          { role: "user", content: `Contexto: Gestión Ibercorp.\nMensaje: ${text}` }
         ],
         response_format: { type: "json_object" }
       });
 
       const orderData = JSON.parse(completion.choices[0].message.content || "{}");
+      
+      // Normalización forzada en el bot
+      if (orderData.action === "create" && !orderData.property.reference) {
+        orderData.property.reference = "IC-" + Math.floor(1000 + Math.random() * 9000);
+      }
 
-      // Log para debug
-      console.log("Comando IA:", orderData);
+      if (orderData.reference) {
+        orderData.reference = orderData.reference.toUpperCase().replace(/\s/g, '');
+      }
+      if (orderData.property && orderData.property.reference) {
+        orderData.property.reference = orderData.property.reference.toUpperCase().replace(/\s/g, '');
+        orderData.property.id = orderData.property.reference.toLowerCase().replace(/[^a-z0-9]/g, '');
+      }
 
+      console.log("Comando IA Normalizado:", orderData);
       await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, "⚡ Ejecutando operación...");
 
-      const normalize = (s: string | undefined) => 
+      const normalizeForSearch = (s: string | undefined) => 
         (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, '');
 
       if (orderData.action === "create") {
-        // Generación de IDs si no existen
-        if (!orderData.property.reference) {
-          orderData.property.reference = "IC-" + Math.floor(1000 + Math.random() * 9000);
+        if (!orderData.property.id) {
+           orderData.property.id = normalizeForSearch(orderData.property.reference);
         }
-        orderData.property.id = normalize(orderData.property.reference);
         
         const formData = new FormData();
         formData.append('data', JSON.stringify(orderData.property));
@@ -193,7 +225,12 @@ export function initBot() {
             }
           });
           
+          // Cleanup
+          for (const imgPath of images) {
+            try { fs.unlinkSync(imgPath); } catch(e) {}
+          }
           delete userPendingImages[ctx.from.id];
+          
           await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `✅ ¡Publicado!\nPropiedad: ${orderData.property.title}\nRef: ${orderData.property.reference}`);
         } catch (err: any) {
           await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ Error en el servidor al publicar.`);
@@ -202,20 +239,15 @@ export function initBot() {
          try {
             const allPropsRes = await axios.get(apiUrl);
             const allProps = allPropsRes.data;
+            const query = normalizeForSearch(orderData.reference);
             
-            const query = normalize(orderData.reference);
-            
-            const found = allProps.find((p: any) => {
-              const pId = normalize(p.id);
-              const pRef = normalize(p.reference);
-              const pTitle = normalize(p.title);
-              
-              // Coincidencia más agresiva
-              return pId.includes(query) || pRef.includes(query) || pTitle.includes(query) || query.includes(pRef);
-            });
+            const found = allProps.find((p: any) => 
+               normalizeForSearch(p.id).includes(query) || 
+               normalizeForSearch(p.reference).includes(query)
+            );
 
             if (!found) {
-              await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ No he encontrado ninguna propiedad que se llame o tenga la referencia "${orderData.reference}".`);
+              await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ No encontrada: "${orderData.reference}".`);
               return;
             }
 
@@ -223,9 +255,8 @@ export function initBot() {
               await axios.delete(`${apiUrl}/${found.id}`, {
                 headers: { 'Authorization': `Bearer ${API_TOKEN}` }
               });
-              await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `✅ Propiedad "${found.title}" (Ref: ${found.reference}) eliminada.`);
+              await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `✅ Borrada: "${found.title}".`);
             } else {
-              // Action: Update
               const formData = new FormData();
               formData.append('data', JSON.stringify({ ...found, ...orderData.property }));
               
@@ -241,8 +272,12 @@ export function initBot() {
                 }
               });
               
+              // Cleanup
+              for (const imgPath of images) {
+                try { fs.unlinkSync(imgPath); } catch(e) {}
+              }
               delete userPendingImages[ctx.from.id];
-              await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `✅ Propiedad "${found.title}" actualizada correctamente.`);
+              await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `✅ Actualizada: "${found.title}".`);
             }
          } catch (err: any) {
            await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ Error al procesar ${orderData.action}.`);
@@ -251,41 +286,35 @@ export function initBot() {
          try {
            const allPropsRes = await axios.get(apiUrl);
            const allProps = allPropsRes.data;
+           const queryZone = normalizeForSearch(orderData.property?.zone);
            
-           const queryZone = normalize(orderData.property?.zone);
-           
-           const filtered = allProps.filter((p: any) => {
-             if (!queryZone) return true;
-             return normalize(p.zone).includes(queryZone);
-           });
+           const filtered = allProps.filter((p: any) => 
+              !queryZone || normalizeForSearch(p.zone).includes(queryZone)
+           );
 
            if (filtered.length === 0) {
-             await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `🧐 No he encontrado propiedades disponibles ${queryZone ? 'en ' + queryZone : 'en el catálogo'}.`);
+             await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `🧐 No hay nada en ${queryZone || 'el catálogo'}.`);
            } else {
-             let response = `🏘️ **He encontrado ${filtered.length} propiedades:**\n\n`;
+             let response = `🏘️ **Encontradas ${filtered.length}:**\n\n`;
              filtered.forEach((p: any, i: number) => {
-               response += `${i+1}. **${p.title}**\n📍 ${p.zone} | 💰 ${new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(p.price)}\n🔑 Ref: ${p.reference}\n\n`;
+               response += `${i+1}. **${p.title}**\n📍 ${p.zone} | Ref: ${p.reference}\n\n`;
              });
              await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, response, { parse_mode: 'Markdown' });
            }
          } catch (err: any) {
-           await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ Error al consultar el catálogo.`);
+           await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ Error al consultar.`);
          }
-      } else {
-         await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❓ Acción no reconocida: ${orderData.action}`);
       }
       
     } catch (e) {
       console.error(e);
-      ctx.telegram.editMessageText(ctx.chat.id, msgId, null, "❌ Hubo un error de conexión con los sistemas o falla de IA.");
+      ctx.telegram.editMessageText(ctx.chat.id, msgId, null, "❌ Error de sistemas.");
     }
   }
 
   bot.launch()
-    .then(() => console.log("🤖 [Bot] Conexión establecida con Telegram exitosamente."))
-    .catch((err) => {
-      console.error("❌ [Bot] Error crítico al lanzar el bot:", err);
-    });
+    .then(() => console.log("🤖 [Bot] Conexión establecida."))
+    .catch((err) => console.error("❌ [Bot] Error:", err));
 
   process.once("SIGINT", () => bot.stop("SIGINT"));
   process.once("SIGTERM", () => bot.stop("SIGTERM"));
