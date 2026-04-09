@@ -144,8 +144,7 @@ export default function Home() {
             className="text-white/70 text-base leading-relaxed mb-10 max-w-lg mx-auto"
             style={{ fontFamily: "var(--font-body)", fontWeight: 300 }}
           >
-            Nuestro equipo le ofrece acceso a propiedades que no encontrará en el mercado abierto. 
-            Contacte con nosotros para una consulta confidencial.
+            Descubra una cuidada selección de propiedades singulares, elegidas por su calidad, ubicación y carácter.
           </p>
           <Link
             href="/contacto"

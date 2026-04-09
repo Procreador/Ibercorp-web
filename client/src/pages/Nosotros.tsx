@@ -78,24 +78,21 @@ export default function Nosotros() {
             </div>
             
             <div className="md:col-span-8 lg:col-span-9 space-y-10">
-              <p
-                className="text-[#2C2C2C] text-xl md:text-2xl leading-[1.6] font-light italic bg-gradient-to-r from-[#2C2C2C] to-[#6B6560] bg-clip-text text-transparent"
-                style={{ fontFamily: "var(--font-display)" }}
-              >
-                En IberCorp contamos con más de 15 años de experiencia en la gestión y comercialización de propiedades en las zonas más exclusivas de Madrid y sus alrededores.
-              </p>
-              
-              <div className="h-px w-20 bg-[#B8A07E]/30" />
-
               <div className="space-y-8 text-[#6B6560] text-base leading-[2] font-light">
+                <p
+                  className="text-[#2C2C2C] text-xl md:text-2xl leading-[1.6] font-light italic bg-gradient-to-r from-[#2C2C2C] to-[#6B6560] bg-clip-text text-transparent"
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
+                  Trabajamos con una cartera cuidadosamente seleccionada de activos inmobiliarios, incluyendo propiedades off-market, gestionados con discreción y confianza. Nuestros clientes valoran la privacidad, la seguridad en cada decisión y un acompañamiento profesional a la altura de cada operación.
+                </p>
+                
+                <div className="h-px w-20 bg-[#B8A07E]/30" />
+
                 <p>
-                  Trabajamos con una cartera cuidadosamente seleccionada de activos inmobiliarios, muchos de ellos fuera del mercado abierto, gestionados bajo criterios de discreción y confianza. Nuestro cliente es exigente y valora la privacidad, la seguridad en cada decisión y un acompañamiento profesional a la altura de la operación.
+                  Asesoramos tanto a compradores finales como a inversores que buscan activos singulares, bien ubicados y con valor a largo plazo. Cada propiedad que gestionamos responde a un estándar claro: calidad, ubicación y potencial.
                 </p>
                 <p>
-                  Asesoramos tanto a compradores finales como a inversores y estructuras patrimoniales que buscan activos singulares, bien ubicados y con valor a largo plazo. Cada propiedad que gestionamos responde a un estándar claro: calidad, ubicación y potencial.
-                </p>
-                <p>
-                  Colaboramos con propietarios que priorizan la confidencialidad y con clientes que buscan acceder a oportunidades que no se encuentran en los canales tradicionales. En IberCorp entendemos cada operación como un proceso que requiere criterio, precisión y una gestión impecable.
+                  Colaboramos con propietarios que priorizan la confidencialidad y con clientes que buscan acceder a oportunidades diferenciadas, tanto dentro como fuera del mercado abierto. Entendemos cada operación como un proceso que requiere criterio, precisión y una gestión impecable.
                 </p>
               </div>
             </div>
@@ -114,12 +111,7 @@ export default function Nosotros() {
               >
                 FILOSOFÍA
               </span>
-              <h2
-                className="text-4xl md:text-5xl font-light tracking-tight leading-tight"
-                style={{ fontFamily: "var(--font-display)" }}
-              >
-                Los pilares que <br/>sustentan nuestra gestión
-              </h2>
+
             </div>
             <div className="hidden md:block w-32 h-px bg-[#B8A07E] mb-6" />
           </div>
@@ -167,18 +159,7 @@ export default function Nosotros() {
       {/* CTA Section */}
       <section className="py-24 md:py-32 px-6 md:px-12 text-center bg-[#FAFAF7]">
         <div className="max-w-2xl mx-auto">
-          <h2
-            className="text-3xl md:text-4xl font-light text-[#2C2C2C] mb-8 tracking-tight"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            Permítanos asesorarle en <br/>su próxima inversión
-          </h2>
-          <p
-            className="text-[#6B6560] text-base leading-relaxed mb-10 font-light italic"
-            style={{ fontFamily: "var(--font-body)" }}
-          >
-            Estaremos encantados de atenderle y resolver cualquier consulta sobre nuestros servicios o propiedades disponibles.
-          </p>
+
           <Link
             href="/contacto"
             className="inline-block px-12 py-5 bg-[#2C2C2C] text-white text-[11px] tracking-[0.3em] uppercase hover:bg-black transition-all duration-500 shadow-xl hover:shadow-2xl"

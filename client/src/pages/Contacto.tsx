@@ -56,18 +56,11 @@ export default function Contacto() {
         <div className="max-w-[1100px] mx-auto grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-16">
           <div>
             <h2
-              className="text-2xl font-light text-[#2C2C2C] mb-6 tracking-wide"
+              className="text-2xl font-light text-[#2C2C2C] mb-10 tracking-wide"
               style={{ fontFamily: "var(--font-display)" }}
             >
               Estamos a su disposición
             </h2>
-            <p
-              className="text-[#6B6560] text-base leading-[1.85] mb-10"
-              style={{ fontFamily: "var(--font-body)", fontWeight: 300 }}
-            >
-              Para consultas sobre propiedades, operaciones off-market o cualquier servicio inmobiliario, 
-              no dude en ponerse en contacto con nosotros. Le atenderemos con la máxima discreción y profesionalidad.
-            </p>
 
             <div className="space-y-6">
               <div className="flex items-start gap-4">
@@ -98,9 +91,14 @@ export default function Contacto() {
                   >
                     EMAIL
                   </p>
-                  <a href="mailto:info@ibercorp.com" className="text-sm text-[#2C2C2C] hover:text-[#B8A07E] transition-colors" style={{ fontFamily: "var(--font-body)" }}>
-                    info@ibercorp.com
-                  </a>
+                  <div className="flex flex-col gap-1">
+                    <a href="mailto:info@ibercorp.com" className="text-sm text-[#2C2C2C] hover:text-[#B8A07E] transition-colors" style={{ fontFamily: "var(--font-body)" }}>
+                      info@ibercorp.com
+                    </a>
+                    <a href="mailto:luisa@ibercorp.com" className="text-sm text-[#2C2C2C] hover:text-[#B8A07E] transition-colors" style={{ fontFamily: "var(--font-body)" }}>
+                      luisa@ibercorp.com
+                    </a>
+                  </div>
                 </div>
               </div>
 
@@ -115,9 +113,14 @@ export default function Contacto() {
                   >
                     TELÉFONO
                   </p>
-                  <a href="tel:+34687493545" className="text-sm text-[#2C2C2C] hover:text-[#B8A07E] transition-colors" style={{ fontFamily: "var(--font-body)" }}>
-                    +34 687 493 545
-                  </a>
+                  <div className="flex flex-col gap-1">
+                    <a href="tel:+34687493545" className="text-sm text-[#2C2C2C] hover:text-[#B8A07E] transition-colors" style={{ fontFamily: "var(--font-body)" }}>
+                      +34 687 493 545
+                    </a>
+                    <a href="tel:+34919381965" className="text-sm text-[#2C2C2C] hover:text-[#B8A07E] transition-colors" style={{ fontFamily: "var(--font-body)" }}>
+                      +34 919 381 965
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
