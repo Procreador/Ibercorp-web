@@ -75,7 +75,7 @@ export default function Propiedades() {
     const childZones = zones.filter(z => z.parent === selectedZone).map(z => z.id);
     const zonesToInclude = [selectedZone, ...childZones];
     
-    return allProperties.filter(p => zonesToInclude.includes(p.zone));
+    return allProperties.filter(p => zonesToInclude.includes(p.zone?.toLowerCase()));
   }, [selectedZone, allProperties]);
 
   const currentZone = zones.find(z => z.id === selectedZone);

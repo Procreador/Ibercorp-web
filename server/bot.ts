@@ -197,6 +197,9 @@ export function initBot() {
         orderData.property.reference = orderData.property.reference.toUpperCase().replace(/\s/g, '');
         orderData.property.id = orderData.property.reference.toLowerCase().replace(/[^a-z0-9]/g, '');
       }
+      if (orderData.property && orderData.property.zone) {
+        orderData.property.zone = orderData.property.zone.toLowerCase();
+      }
 
       console.log("Comando IA Normalizado:", orderData);
       await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, "⚡ Ejecutando operación...");
