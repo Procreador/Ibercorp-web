@@ -73,9 +73,10 @@ export default function Propiedades() {
     // Si la zona seleccionada es una zona padre (ej. madrid-capital)
     // mostramos todas las propiedades de sus hijos también
     const childZones = zones.filter(z => z.parent === selectedZone).map(z => z.id);
-    const zonesToInclude = [selectedZone, ...childZones];
+    const zonesToInclude = [selectedZone, ...childZones].map(z => z?.toLowerCase());
     
     return allProperties.filter(p => zonesToInclude.includes(p.zone?.toLowerCase()));
+
   }, [selectedZone, allProperties]);
 
   const currentZone = zones.find(z => z.id === selectedZone);

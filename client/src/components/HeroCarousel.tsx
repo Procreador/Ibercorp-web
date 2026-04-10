@@ -9,11 +9,11 @@ export default function HeroCarousel() {
         playsInline
         className="absolute inset-0 w-full h-full object-cover"
       >
-        <source src="/videos/video presentacion.mp4" type="video/mp4" />
+        <source src="/videos/video_compi_noteequivoques.mp4" type="video/mp4" />
       </video>
 
       {/* Malla semitransparente / Overlay oscura */}
-      <div className="absolute inset-0 bg-black/40" />
+      <div className="absolute inset-0 bg-black/50" />
 
       {/* Hero Content */}
       <div className="absolute inset-0 flex items-center justify-center z-10">
