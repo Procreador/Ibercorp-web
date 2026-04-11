@@ -117,7 +117,7 @@ export default function Home() {
 
       <section
         ref={(el) => { sectionRefs.current[2] = el; }}
-        className="fade-section relative py-28 md:py-36 px-6 md:px-12 bg-[#1A1A1A] text-white overflow-hidden"
+        className="fade-section relative py-16 md:py-20 px-6 md:px-12 bg-[#1A1A1A] text-white overflow-hidden"
       >
         <div className="absolute inset-0 opacity-5">
           <div className="absolute inset-0" style={{
@@ -127,32 +127,12 @@ export default function Home() {
         </div>
 
         <div className="relative max-w-2xl mx-auto text-center">
-          <span
-            className="text-[11px] tracking-[0.2em] text-[#B8A07E] uppercase block mb-4"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
-            DISCRECIÓN Y CONFIANZA
-          </span>
-          <h2
-            className="text-3xl md:text-4xl font-light tracking-wide mb-6 leading-snug"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            ¿Busca una propiedad exclusiva en Madrid?
-          </h2>
-          <div className="w-12 h-px bg-[#B8A07E] mx-auto mb-8" />
           <p
-            className="text-white/70 text-base leading-relaxed mb-10 max-w-lg mx-auto"
+            className="text-white/80 text-base md:text-lg leading-relaxed max-w-2xl mx-auto"
             style={{ fontFamily: "var(--font-body)", fontWeight: 300 }}
           >
             Descubra una cuidada selección de propiedades singulares, elegidas por su calidad, ubicación y carácter.
           </p>
-          <Link
-            href="/contacto"
-            className="inline-block px-10 py-4 border border-[#B8A07E] text-[#B8A07E] text-[12px] tracking-[0.15em] uppercase hover:bg-[#B8A07E] hover:text-[#1A1A1A] transition-all duration-300"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
-            CONTACTAR
-          </Link>
         </div>
       </section>
 
