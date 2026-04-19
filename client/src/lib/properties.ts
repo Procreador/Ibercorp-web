@@ -234,28 +234,28 @@ export const zones = [
     id: "almagro",
     name: "Almagro",
     description: "Elegancia clásica y fincas señoriales en Chamberí.",
-    menuImage: "/img/menu_propiedades/Almagro---Atardecer-Madrid.jpg",
+    menuImage: "/img/menu_propiedades/ptaalcala.jpg",
     parent: "madrid-capital",
   },
   {
     id: "salamanca",
     name: "Barrio de Salamanca",
     description: "El barrio más emblemático del lujo madrileño.",
-    menuImage: "/img/menu_propiedades/Salamanca---Atardecer-Madri.jpg",
+    menuImage: "/img/menu_propiedades/bsalamanca.jpg",
     parent: "madrid-capital",
   },
   {
     id: "jeronimos",
     name: "Jerónimos",
     description: "Prestigio y patrimonio junto al Retiro.",
-    menuImage: "/img/menu_propiedades/Jer_nimos---Atardecer-Madri.jpg",
+    menuImage: "/img/menu_propiedades/iStock-1489512945.jpg",
     parent: "madrid-capital",
   },
   {
     id: "justicia",
     name: "Justicia",
     description: "El barrio más bohemio y sofisticado de Madrid.",
-    menuImage: "/img/menu_propiedades/Almagro---Atardecer-Madrid.jpg",
+    menuImage: "/img/menu_propiedades/ptaalcala.jpg",
     parent: "madrid-capital",
   },
   {
@@ -268,7 +268,7 @@ export const zones = [
     id: "areas-residenciales",
     name: "Madrid - Áreas Residenciales",
     description: "Zonas residenciales premium a las afueras de la capital.",
-    menuImage: "/img/menu_propiedades/Otras-Zonas-v2.jpg",
+    menuImage: "/img/menu_propiedades/ptaalcala.jpg",
   },
   {
     id: "la-moraleja",
@@ -292,13 +292,13 @@ export const zones = [
     id: "otras-zonas",
     name: "Otras Zonas",
     description: "Otras ubicaciones estratégicas de interés.",
-    menuImage: "/img/menu_propiedades/Otras-Zonas-v2.jpg",
+    menuImage: "/img/menu_propiedades/ptaalcala.jpg",
   },
   {
     id: "singulares",
     name: "Propiedades Singulares",
     description: "Inmuebles únicos por su arquitectura o ubicación.",
-    menuImage: "/img/menu_propiedades/Propiedades-Singulares-v5.jpg",
+    menuImage: "/img/menu_propiedades/ptaalcala.jpg",
   },
 ];
 

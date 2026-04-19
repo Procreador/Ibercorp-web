@@ -46,10 +46,10 @@ export default function PropertySidebar({ activeZone }: PropertySidebarProps) {
         </div>
 
         {/* Categories / Zones */}
-        <div className="space-y-4">
+        <div className="space-y-1.5">
            {/* All Properties / Reset */}
            <Link href="/propiedades">
-            <div className={`flex items-center justify-between cursor-pointer py-3 border-b border-gray-50 group hover:pl-2 transition-all ${!activeZone ? 'text-[#B8A07E]' : 'text-gray-800'}`}>
+            <div className={`flex items-center justify-between cursor-pointer py-2 border-b border-gray-50 group hover:pl-2 transition-all ${!activeZone ? 'text-[#B8A07E]' : 'text-gray-800'}`}>
               <div className="flex items-center gap-2">
                 <LayoutGrid className="w-4 h-4 opacity-50" />
                 <span className="text-[11px] tracking-widest font-bold uppercase transition-colors">Todas las Propiedades</span>
@@ -59,15 +59,15 @@ export default function PropertySidebar({ activeZone }: PropertySidebarProps) {
           </Link>
 
           {mainGroups.map(group => (
-            <div key={group.id} className="border-b border-gray-50 pb-2 last:border-0 md:last:border-b">
+            <div key={group.id} className="border-b border-gray-50 pb-0.5 last:border-0 md:last:border-b">
               <details open={activeZone === group.id || group.subItems.some(s => s.id === activeZone)} className="group">
-                <summary className="flex items-center justify-between cursor-pointer list-none text-[11px] tracking-widest font-bold text-gray-800 hover:text-[#B8A07E] transition-all py-3 uppercase">
+                <summary className="flex items-center justify-between cursor-pointer list-none text-[11px] tracking-widest font-bold text-gray-800 hover:text-[#B8A07E] transition-all py-2 uppercase">
                   <div className="flex items-center gap-2">
                     <ChevronDown className={`w-3 h-3 text-[#B8A07E] transition-transform ${activeZone === group.id ? 'rotate-0' : 'group-open:rotate-180'}`} />
                     <span>{group.title}</span>
                   </div>
                 </summary>
-                <div className="mt-1 space-y-0.5 pl-5 border-l border-gray-100 ml-1.5 mb-4">
+                <div className="mt-0.5 space-y-0 pl-5 border-l border-gray-100 ml-1.5 mb-2">
                    <Link href={`/propiedades?zona=${group.id}`}>
                     <span className={`block text-[12px] py-2 cursor-pointer transition-colors ${activeZone === group.id ? "text-[#B8A07E] font-medium" : "text-gray-500 hover:text-gray-900"}`}>
                       Ver todo en {group.title.toLowerCase()}
@@ -87,9 +87,9 @@ export default function PropertySidebar({ activeZone }: PropertySidebarProps) {
 
           {/* Independent Zones */}
           {independentZones.map(zone => (
-            <div key={zone.id} className="border-b border-gray-50 pb-2">
+            <div key={zone.id} className="border-b border-gray-50 pb-0.5">
                <Link href={`/propiedades?zona=${zone.id}`}>
-                <div className="flex items-center justify-between cursor-pointer text-[11px] tracking-widest font-bold text-gray-800 hover:text-[#B8A07E] transition-all py-3 uppercase">
+                <div className="flex items-center justify-between cursor-pointer text-[11px] tracking-widest font-bold text-gray-800 hover:text-[#B8A07E] transition-all py-2 uppercase">
                   <span>{zone.name}</span>
                   <ChevronRight className={`w-3 h-3 transition-opacity ${activeZone === zone.id ? 'opacity-100 text-[#B8A07E]' : 'opacity-30'}`} />
                 </div>
