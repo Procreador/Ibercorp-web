@@ -236,7 +236,10 @@ export function initBot() {
           
           await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `✅ ¡Publicado!\nPropiedad: ${orderData.property.title}\nRef: ${orderData.property.reference}`);
         } catch (err: any) {
-          await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ Error en el servidor al publicar.`);
+          const apiError = err.response?.data?.error || err.message;
+          const details = err.response?.data?.details || "";
+          console.error("❌ [Bot Post Error]:", apiError, details);
+          await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ Error en el servidor: ${apiError}\n${details}`);
         }
       } else if (orderData.action === "update" || orderData.action === "delete") {
          try {

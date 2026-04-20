@@ -5,6 +5,7 @@ import multer from "multer";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs/promises";
+import fsSync from "fs";
 import { v4 as uuidv4 } from "uuid";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -14,15 +15,13 @@ export const router = Router();
 
 // Configure multer for image uploads
 const storage = multer.diskStorage({
-  destination: async (req, file, cb) => {
-    // Save to the persistent volume folder (data/images) rather than the ephemeral client folder
+  destination: (req, file, cb) => {
+    // Subida síncrona para evitar errores de Multer con callbacks asíncronos
     const uploadDir = path.resolve(process.cwd(), "data", "images");
-    try {
-      await fs.mkdir(uploadDir, { recursive: true });
-      cb(null, uploadDir);
-    } catch (error) {
-      cb(error as Error, uploadDir);
+    if (!fsSync.existsSync(uploadDir)) {
+      fsSync.mkdirSync(uploadDir, { recursive: true });
     }
+    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
     const uniqueName = `${uuidv4()}${path.extname(file.originalname)}`;
@@ -94,9 +93,12 @@ router.post("/", verifyToken, upload.array("images", 20), async (req, res) => {
       message: "Property created successfully",
       property: newProperty,
     });
-  } catch (error) {
-    console.error("Error creating property:", error);
-    res.status(500).json({ error: "Failed to create property" });
+  } catch (error: any) {
+    console.error("❌ [API Create Error]:", error);
+    res.status(500).json({ 
+      error: "Failed to create property", 
+      details: error.message 
+    });
   }
 });
 
@@ -134,9 +136,12 @@ router.put("/:id", verifyToken, upload.array("images", 20), async (req, res) => 
       message: "Property updated successfully",
       property: updatedProperty,
     });
-  } catch (error) {
-    console.error("Error updating property:", error);
-    res.status(500).json({ error: "Failed to update property" });
+  } catch (error: any) {
+    console.error("❌ [API Update Error]:", error);
+    res.status(500).json({ 
+      error: "Failed to update property", 
+      details: error.message 
+    });
   }
 });
 
