@@ -4,10 +4,14 @@ export interface Property {
   address: string;
   ref: string;
   tag: string;
-  price: string;
-  m2: number;
-  beds: number;
-  baths: number;
+  price: string | number;
+  m2?: number;
+  beds?: number;
+  baths?: number;
+  size?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  reference?: string;
   year: string;
   description: string;
   features: string[];

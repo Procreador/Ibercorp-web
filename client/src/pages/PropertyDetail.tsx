@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "wouter";
 import { properties as staticProperties, Property } from "@/lib/properties";
 import { MapPin, Maximize, BedDouble, Bath, Calendar, ChevronLeft, ChevronRight, X, ArrowLeft, Loader2 } from "lucide-react";
+import { formatPrice } from "@/lib/utils";
 
 export default function PropertyDetail() {
   const { id } = useParams<{ id: string }>();
@@ -254,7 +255,7 @@ export default function PropertyDetail() {
                 className="text-2xl font-light text-[#2C2C2C] mb-2"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                {property.price}
+                {formatPrice(property.price)}
               </p>
               <div className="h-px bg-[#E8E4DE] my-6" />
               <p

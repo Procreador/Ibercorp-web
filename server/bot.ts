@@ -40,8 +40,7 @@ export function initBot() {
   });
 
   bot.command("ping", (ctx) => {
-    console.log("🏓 [Bot] /ping recibido");
-    ctx.reply("pong 🏓 - Versión Diagnóstico v1.0.1 ✅");
+    ctx.reply("pong 🏓 - Ibercorp Bot activo y operando.");
   });
 
   bot.on(message("voice"), async (ctx) => {
@@ -150,12 +149,12 @@ export function initBot() {
 
       const systemPrompt = `
       Eres un asistente inmobiliario experto de la empresa Ibercorp.
-      Tu tarea es gestionar el catálogo de propiedades a través de lenguaje natural.
+      Tu tarea es gestionar el catálogo de propiedades con precisión absoluta.
       
       Debes extraer los datos y devolver ÚNICAMENTE un JSON:
       {
         "action": "create" | "update" | "delete" | "query",
-        "reference": "string (ID o Referencia, ej: IC-7038)",
+        "reference": "string (REFERENCIA limpia, ej: IC-7038)",
         "property": {
           "title": "string",
           "description": "string",
@@ -169,10 +168,12 @@ export function initBot() {
         }
       }
 
-      REGLAS:
-      1. Para 'create', genera una referencia profesional si no existe (ej: IC-XXXX).
-      2. Normaliza la referencia: siempre en MAYÚSCULAS y sin espacios (ej: IC-7038).
-      3. Responde SOLO con el JSON.
+      REGLAS DE ORO:
+      1. Referencia: Si no existe, genera una (IC-XXXX). 
+      2. Normalización de Ceros: Si el usuario dice "IC ochomil" o similar, conviértelo a número (IC-8000).
+      3. Acción 'create': Se usa para añadir. Si la propiedad ya existe, el sistema la actualizará automáticamente.
+      4. Consulta: Para 'query', usa el campo 'zone' dentro de 'property'.
+      5. Responde SOLO con el JSON válido. No añadas texto extra.
       `;
 
       const completion = await openai.chat.completions.create({
@@ -240,70 +241,58 @@ export function initBot() {
           const apiError = err.response?.data?.error || err.message;
           const details = err.response?.data?.details || "";
           console.error("❌ [Bot Post Error]:", apiError, details);
-          await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ Error en el servidor: ${apiError}\n${details}`);
+          await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ Error en el servidor al publicar.`);
         }
       } else if (orderData.action === "update" || orderData.action === "delete") {
          try {
-            const allPropsRes = await axios.get(apiUrl);
-            const allProps = allPropsRes.data;
-            const query = normalizeForSearch(orderData.reference);
-            
-            const found = allProps.find((p: any) => 
-               normalizeForSearch(p.id).includes(query) || 
-               normalizeForSearch(p.reference).includes(query)
-            );
+           const axiosMethod = orderData.action === "delete" ? axios.delete : axios.put;
+           const endpoint = `${apiUrl}/${orderData.reference}`;
+           
+           const formData = new FormData();
+           if (orderData.action === "update") {
+             formData.append('data', JSON.stringify(orderData.property));
+             const images = userPendingImages[ctx.from.id] || [];
+             for (const imgPath of images) {
+               formData.append('images', fs.createReadStream(imgPath));
+             }
+           }
 
-            if (!found) {
-              await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ No encontrada: "${orderData.reference}".`);
-              return;
-            }
+           await axios({
+             method: orderData.action === "delete" ? 'delete' : 'put',
+             url: endpoint,
+             data: orderData.action === "update" ? formData : null,
+             headers: { 
+               'Authorization': `Bearer ${API_TOKEN}`,
+               ...(orderData.action === "update" ? formData.getHeaders() : {})
+             }
+           });
 
-            if (orderData.action === "delete") {
-              await axios.delete(`${apiUrl}/${found.id}`, {
-                headers: { 'Authorization': `Bearer ${API_TOKEN}` }
-              });
-              await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `✅ Borrada: "${found.title}".`);
-            } else {
-              const formData = new FormData();
-              formData.append('data', JSON.stringify({ ...found, ...orderData.property }));
-              
-              const images = userPendingImages[ctx.from.id] || [];
-              for (const imgPath of images) {
-                formData.append('images', fs.createReadStream(imgPath));
-              }
+           // Cleanup if update
+           if (orderData.action === "update") {
+             const images = userPendingImages[ctx.from.id] || [];
+             for (const imgPath of images) {
+               try { fs.unlinkSync(imgPath); } catch(e) {}
+             }
+             delete userPendingImages[ctx.from.id];
+           }
 
-              await axios.put(`${apiUrl}/${found.id}`, formData, {
-                headers: {
-                  'Authorization': `Bearer ${API_TOKEN}`,
-                  ...formData.getHeaders()
-                }
-              });
-              
-              // Cleanup
-              for (const imgPath of images) {
-                try { fs.unlinkSync(imgPath); } catch(e) {}
-              }
-              delete userPendingImages[ctx.from.id];
-              await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `✅ Actualizada: "${found.title}".`);
-            }
+           const verb = orderData.action === "delete" ? "Borrada" : "Actualizada";
+           await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `✅ ${verb}: "${orderData.reference}".`);
          } catch (err: any) {
-           const apiError = err.response?.data?.error || err.message;
-           const details = err.response?.data?.details || "";
-           console.error(`❌ [Bot ${orderData.action} Error]:`, apiError, details);
-           await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ Error en ${orderData.action}: ${apiError}\n${details}`);
+           await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ No se pudo procesar la ${orderData.action}. Verifica que la referencia sea correcta.`);
          }
       } else if (orderData.action === "query") {
          try {
            const allPropsRes = await axios.get(apiUrl);
            const allProps = allPropsRes.data;
-           const queryZone = normalizeForSearch(orderData.property?.zone);
+           const queryZone = orderData.property?.zone?.toLowerCase();
            
            const filtered = allProps.filter((p: any) => 
-              !queryZone || normalizeForSearch(p.zone).includes(queryZone)
+              !queryZone || p.zone?.toLowerCase().includes(queryZone)
            );
 
            if (filtered.length === 0) {
-             await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `🧐 No hay nada en ${queryZone || 'el catálogo'}.`);
+             await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `🧐 No hay nada en ${orderData.property?.zone || 'el catálogo'}.`);
            } else {
              let response = `🏘️ **Encontradas ${filtered.length}:**\n\n`;
              filtered.forEach((p: any, i: number) => {
@@ -312,9 +301,7 @@ export function initBot() {
              await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, response, { parse_mode: 'Markdown' });
            }
          } catch (err: any) {
-           const apiError = err.response?.data?.error || err.message;
-           console.error("❌ [Bot Query Error]:", apiError);
-           await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ Error al consultar: ${apiError}`);
+           await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ Error al consultar.`);
          }
       }
       

@@ -13,6 +13,36 @@ const __dirname = path.dirname(__filename);
 
 export const router = Router();
 
+// Normalizador Universal de datos (Idealista style)
+const normalizePropertyData = (data: any) => {
+  const normalized = { ...data };
+  
+  // Mapeo de Área (sqm, m2, metros -> size)
+  normalized.size = data.size || data.sqm || data.m2 || data.superficie || null;
+  
+  // Mapeo de Dormitorios (beds, habitaciones -> bedrooms)
+  normalized.bedrooms = data.bedrooms || data.beds || data.habitaciones || data.cuartos || null;
+  
+  // Mapeo de Baños (baths, aseos -> bathrooms)
+  normalized.bathrooms = data.bathrooms || data.baths || data.aseos || null;
+
+  // Limpieza de tipos (asegurar números)
+  if (normalized.size) normalized.size = parseInt(normalized.size.toString().replace(/[^0-9]/g, ''));
+  if (normalized.bedrooms) normalized.bedrooms = parseInt(normalized.bedrooms.toString().replace(/[^0-9]/g, ''));
+  if (normalized.bathrooms) normalized.bathrooms = parseInt(normalized.bathrooms.toString().replace(/[^0-9]/g, ''));
+  if (normalized.price) normalized.price = parseFloat(normalized.price.toString().replace(/[^0-9.]/g, ''));
+
+  return normalized;
+};
+
+// Normalización de referencias (ignora guiones, espacios, ceros/oes)
+const normalizeRef = (ref: string) => {
+  if (!ref) return "";
+  return ref.toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
+    .replace(/o/g, '0'); // Normalización agresiva de o/0
+};
+
 // Configure multer for image uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -70,66 +100,96 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// POST create new property (protected)
+// POST create or update property (Smart Upsert)
 router.post("/", verifyToken, upload.array("images", 20), async (req, res) => {
   try {
-    const propertyData = JSON.parse(req.body.data || "{}");
+    const rawData = JSON.parse(req.body.data || "{}");
+    const propertyData = normalizePropertyData(rawData);
+    
+    // Generar ID único basado en referencia si no existe
+    if (!propertyData.id && propertyData.reference) {
+      propertyData.id = normalizeRef(propertyData.reference);
+    }
+
+    if (!propertyData.id || !propertyData.title) {
+      return res.status(400).json({ error: "Missing required fields (id/reference and title)" });
+    }
+
     const files = req.files as Express.Multer.File[];
+    const imageUrls = files.map(file => `/images/${file.filename}`);
     
-    // Generate image URLs
-    const images = files.map(file => `/img/properties/${file.filename}`);
+    const existing = await db.getPropertyById(propertyData.id);
     
-    const newProperty = {
-      ...propertyData,
-      images,
-      id: propertyData.id || uuidv4(),
-      createdAt: new Date().toISOString(),
-    };
-    
-    await db.createProperty(newProperty);
-    
-    res.status(201).json({
-      success: true,
-      message: "Property created successfully",
-      property: newProperty,
-    });
+    if (existing) {
+      // SMART UPSERT: Si existe, actualizamos
+      const updatedImages = [...(existing.images || []), ...imageUrls];
+      await db.updateProperty(propertyData.id, { 
+        ...propertyData, 
+        images: updatedImages 
+      });
+      
+      const updated = await db.getPropertyById(propertyData.id);
+      return res.status(200).json({
+        success: true,
+        message: "Property updated successfully (Upsert)",
+        property: updated,
+      });
+    } else {
+      // Creación normal
+      const newProperty = {
+        ...propertyData,
+        images: imageUrls,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      await db.createProperty(newProperty as any);
+      return res.status(201).json({
+        success: true,
+        message: "Property created successfully",
+        property: newProperty,
+      });
+    }
   } catch (error: any) {
-    console.error("❌ [API Create Error]:", error);
-    res.status(500).json({ 
-      error: "Failed to create property", 
-      details: error.message 
-    });
+    console.error("❌ [API POST Error]:", error.message);
+    res.status(500).json({ error: "Operation failed", details: error.message });
   }
 });
 
-// PUT update property (protected)
+// PUT update property (protected with Fuzzy Search)
 router.put("/:id", verifyToken, upload.array("images", 20), async (req, res) => {
   try {
-    const propertyId = req.params.id;
-    const propertyData = JSON.parse(req.body.data || "{}");
+    const id = req.params.id;
+    const rawData = JSON.parse(req.body.data || "{}");
+    const propertyData = normalizePropertyData(rawData);
     const files = req.files as Express.Multer.File[];
     
-    // Check if property exists
-    const existingProperty = await db.getPropertyById(propertyId);
-    if (!existingProperty) {
+    let existing = await db.getPropertyById(id);
+    
+    // Búsqueda flexible si no hay ID exacto
+    if (!existing) {
+      const all = await db.getAllProperties();
+      existing = all.find(p => normalizeRef(p.id) === normalizeRef(id) || normalizeRef(p.reference) === normalizeRef(id));
+    }
+
+    if (!existing) {
       return res.status(404).json({ error: "Property not found" });
     }
     
-    // Handle new images
-    let images = existingProperty.images || [];
+    let images = existing.images || [];
     if (files && files.length > 0) {
-      const newImages = files.map(file => `/img/properties/${file.filename}`);
+      const newImages = files.map(file => `/images/${file.filename}`);
       images = [...images, ...newImages];
     }
     
     const updatedProperty = {
-      ...existingProperty,
+      ...existing,
       ...propertyData,
       images,
       updatedAt: new Date().toISOString(),
     };
     
-    await db.updateProperty(propertyId, updatedProperty);
+    await db.updateProperty(existing.id, updatedProperty);
     
     res.json({
       success: true,
@@ -137,33 +197,34 @@ router.put("/:id", verifyToken, upload.array("images", 20), async (req, res) => 
       property: updatedProperty,
     });
   } catch (error: any) {
-    console.error("❌ [API Update Error]:", error);
-    res.status(500).json({ 
-      error: "Failed to update property", 
-      details: error.message 
-    });
+    console.error("❌ [API Update Error]:", error.message);
+    res.status(500).json({ error: "Failed to update property", details: error.message });
   }
 });
 
-// DELETE property (protected)
+// DELETE property (protected with Fuzzy Search)
 router.delete("/:id", verifyToken, async (req, res) => {
   try {
-    const propertyId = req.params.id;
+    const id = req.params.id;
+    let existing = await db.getPropertyById(id);
     
-    // Check if property exists
-    const property = await db.getPropertyById(propertyId);
-    if (!property) {
+    if (!existing) {
+      const all = await db.getAllProperties();
+      existing = all.find(p => normalizeRef(p.id) === normalizeRef(id) || normalizeRef(p.reference) === normalizeRef(id));
+    }
+
+    if (!existing) {
       return res.status(404).json({ error: "Property not found" });
     }
     
-    await db.deleteProperty(propertyId);
+    await db.deleteProperty(existing.id);
     
     res.json({
       success: true,
       message: "Property deleted successfully",
     });
-  } catch (error) {
-    console.error("Error deleting property:", error);
+  } catch (error: any) {
+    console.error("❌ [API Delete Error]:", error.message);
     res.status(500).json({ error: "Failed to delete property" });
   }
 });

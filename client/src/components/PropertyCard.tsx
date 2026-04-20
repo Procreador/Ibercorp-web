@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import type { Property } from "@/lib/properties";
 import { MapPin, Maximize, BedDouble, Bath } from "lucide-react";
+import { formatPrice } from "@/lib/utils";
 
 interface PropertyCardProps {
   property: Property;
@@ -49,15 +50,15 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           <div className="flex items-center gap-5 text-[#6B6560] mb-4">
             <div className="flex items-center gap-1.5">
               <Maximize className="w-3.5 h-3.5" />
-              <span className="text-sm">{property.m2} m²</span>
+              <span className="text-sm">{property.size || property.m2 || 0} m²</span>
             </div>
             <div className="flex items-center gap-1.5">
               <BedDouble className="w-3.5 h-3.5" />
-              <span className="text-sm">{property.beds} hab.</span>
+              <span className="text-sm">{property.bedrooms || property.beds || 0} hab.</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Bath className="w-3.5 h-3.5" />
-              <span className="text-sm">{property.baths} baños</span>
+              <span className="text-sm">{property.bathrooms || property.baths || 0} baños</span>
             </div>
           </div>
 
@@ -66,7 +67,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
               className="text-lg font-light text-[#2C2C2C] tracking-wide"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              {property.price}
+              {formatPrice(property.price)}
             </p>
             <span
               className="text-[11px] tracking-[0.12em] uppercase text-[#B8A07E] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
