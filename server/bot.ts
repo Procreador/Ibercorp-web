@@ -22,7 +22,8 @@ export function initBot() {
   console.log("🚀 [Bot] Verificando variables de entorno:");
   console.log(`   - TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN ? '✅ Presente (' + TELEGRAM_BOT_TOKEN.substring(0, 5) + '...)' : '❌ Ausente'}`);
   console.log(`   - OPENAI_API_KEY: ${OPENAI_API_KEY ? '✅ Presente' : '❌ Ausente'}`);
-  console.log(`   - API_TOKEN: ${API_TOKEN ? '✅ Presente' : '❌ Ausente'}`);
+  console.log(`   - API_TOKEN: ${API_TOKEN ? '✅ Presente (' + (API_TOKEN || '').substring(0, 5) + '...)' : '❌ Ausente'}`);
+  console.log(`   - PORT: ${PORT || 'Default (3000)'}`);
 
   if (!TELEGRAM_BOT_TOKEN || !OPENAI_API_KEY) {
     console.warn("⚠️ [Bot] Faltan variables críticas. El bot no se iniciará.");
@@ -40,7 +41,7 @@ export function initBot() {
 
   bot.command("ping", (ctx) => {
     console.log("🏓 [Bot] /ping recibido");
-    ctx.reply("pong 🏓 - El bot está vivo y conectado.");
+    ctx.reply("pong 🏓 - Versión Diagnóstico v1.0.1 ✅");
   });
 
   bot.on(message("voice"), async (ctx) => {
@@ -286,7 +287,10 @@ export function initBot() {
               await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `✅ Actualizada: "${found.title}".`);
             }
          } catch (err: any) {
-           await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ Error al procesar ${orderData.action}.`);
+           const apiError = err.response?.data?.error || err.message;
+           const details = err.response?.data?.details || "";
+           console.error(`❌ [Bot ${orderData.action} Error]:`, apiError, details);
+           await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ Error en ${orderData.action}: ${apiError}\n${details}`);
          }
       } else if (orderData.action === "query") {
          try {
@@ -308,7 +312,9 @@ export function initBot() {
              await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, response, { parse_mode: 'Markdown' });
            }
          } catch (err: any) {
-           await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ Error al consultar.`);
+           const apiError = err.response?.data?.error || err.message;
+           console.error("❌ [Bot Query Error]:", apiError);
+           await ctx.telegram.editMessageText(ctx.chat.id, msgId, null, `❌ Error al consultar: ${apiError}`);
          }
       }
       
