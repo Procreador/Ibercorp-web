@@ -70,12 +70,16 @@ export default function Propiedades() {
   const filteredProperties = useMemo(() => {
     if (!selectedZone) return [];
     
+    // Función de normalización robusta
+    const normalize = (str: string) => 
+      (str || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+
     // Si la zona seleccionada es una zona padre (ej. madrid-capital)
     // mostramos todas las propiedades de sus hijos también
     const childZones = zones.filter(z => z.parent === selectedZone).map(z => z.id);
-    const zonesToInclude = [selectedZone, ...childZones].map(z => z?.toLowerCase());
+    const zonesToInclude = [selectedZone, ...childZones].map(z => normalize(z));
     
-    return allProperties.filter(p => zonesToInclude.includes(p.zone?.toLowerCase()));
+    return allProperties.filter(p => zonesToInclude.includes(normalize(p.zone)));
 
   }, [selectedZone, allProperties]);
 

@@ -35,12 +35,16 @@ const normalizePropertyData = (data: any) => {
   return normalized;
 };
 
-// Normalización de referencias (ignora guiones, espacios, ceros/oes)
-const normalizeRef = (ref: string) => {
-  if (!ref) return "";
-  return ref.toLowerCase()
-    .replace(/[^a-z0-9]/g, '')
-    .replace(/o/g, '0'); // Normalización agresiva de o/0
+// Normalización Universal de texto (acentos, mayúsculas, etc.)
+const normalizeText = (text: string) => {
+  if (!text) return "";
+  return text
+    .toString()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Eliminar acentos
+    .replace(/[^a-z0-9]/g, "")      // Solo alfanumérico
+    .replace(/o/g, '0');            // Normalizar O por 0 para referencias
 };
 
 // Configure multer for image uploads
@@ -108,7 +112,7 @@ router.post("/", verifyToken, upload.array("images", 20), async (req, res) => {
     
     // Generar ID único basado en referencia si no existe
     if (!propertyData.id && propertyData.reference) {
-      propertyData.id = normalizeRef(propertyData.reference);
+      propertyData.id = normalizeText(propertyData.reference);
     }
 
     if (!propertyData.id || !propertyData.title) {
@@ -169,7 +173,7 @@ router.put("/:id", verifyToken, upload.array("images", 20), async (req, res) => 
     // Búsqueda flexible si no hay ID exacto
     if (!existing) {
       const all = await db.getAllProperties();
-      existing = all.find(p => normalizeRef(p.id) === normalizeRef(id) || normalizeRef(p.reference) === normalizeRef(id));
+      existing = all.find(p => normalizeText(p.id) === normalizeText(id) || normalizeText(p.reference) === normalizeText(id));
     }
 
     if (!existing) {
@@ -210,7 +214,7 @@ router.delete("/:id", verifyToken, async (req, res) => {
     
     if (!existing) {
       const all = await db.getAllProperties();
-      existing = all.find(p => normalizeRef(p.id) === normalizeRef(id) || normalizeRef(p.reference) === normalizeRef(id));
+      existing = all.find(p => normalizeText(p.id) === normalizeText(id) || normalizeText(p.reference) === normalizeText(id));
     }
 
     if (!existing) {

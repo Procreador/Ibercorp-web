@@ -101,21 +101,21 @@ export function initBot() {
       const photo = ctx.message.photo.pop();
       if (!photo) return;
       
-      const fileLink = await ctx.telegram.getFileLink(photo.file_id);
-      const response = await axios({
-        url: fileLink.toString(),
-        method: 'GET',
-        responseType: 'arraybuffer'
+      const fileLink = (await ctx.telegram.getFileLink(photo.file_id)).toString();
+      
+      // Guardar localmente en directorio temporal
+      const filePath = path.join(os.tmpdir(), `${Date.now()}-${uuidv4().slice(0, 8)}.jpg`);
+      const response = await axios.get(fileLink, { responseType: 'stream' });
+      const writer = fs.createWriteStream(filePath);
+      response.data.pipe(writer);
+
+      await new Promise((resolve, reject) => {
+        writer.on('finish', resolve);
+        writer.on('error', reject);
       });
       
-      const tempFilePath = path.join(os.tmpdir(), `temp_${Date.now()}_${Math.floor(Math.random() * 10000)}.jpg`);
-      fs.writeFileSync(tempFilePath, response.data);
-      
       if (!userPendingImages[userId]) userPendingImages[userId] = [];
-      userPendingImages[userId].push(tempFilePath);
-      
-      // Feedback inmediato
-      ctx.reply(`📸 Imagen ${userPendingImages[userId].length} guardada.`);
+      userPendingImages[userId].push(filePath);
       
       // Manejar caption y debounce
       if (ctx.message.caption) {
@@ -162,18 +162,21 @@ export function initBot() {
           "sqm": number,
           "bedrooms": number,
           "bathrooms": number,
-          "zone": "string",
+          "zone": "string (ID DE ZONA)",
           "type": "Venta" | "Alquiler",
           "reference": "string"
         }
       }
 
       REGLAS DE ORO:
-      1. Referencia: Si no existe, genera una (IC-XXXX). 
-      2. Normalización de Ceros: Si el usuario dice "IC ochomil" o similar, conviértelo a número (IC-8000).
-      3. Acción 'create': Se usa para añadir. Si la propiedad ya existe, el sistema la actualizará automáticamente.
-      4. Consulta: Para 'query', usa el campo 'zone' dentro de 'property'.
-      5. Responde SOLO con el JSON válido. No añadas texto extra.
+      1. REFERENCIA: Si no se proporciona una, GENERA UNA ALEATORIA (Ej: IC-5421, IC-9032). NUNCA uses "IC-XXXX".
+      2. ZONAS (Usa estos IDs exactos en el campo 'zone'):
+         - madrid-capital, almagro, salamanca, jeronimos, justicia, madrid-capital-otras
+         - areas-residenciales, la-moraleja, pozuelo
+         - zonas-costeras, otras-zonas, singulares
+      3. Normalización: Convierte "IC ochomil" a "IC-8000".
+      4. Acción 'create': Se usa para añadir. Si el ID ya existe, el servidor lo actualizará.
+      5. Responde SOLO con el JSON válido.
       `;
 
       const completion = await openai.chat.completions.create({
@@ -197,7 +200,17 @@ export function initBot() {
       }
       if (orderData.property && orderData.property.reference) {
         orderData.property.reference = orderData.property.reference.toUpperCase().replace(/\s/g, '');
-        orderData.property.id = orderData.property.reference.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const normalizeText = (text: string) => {
+          if (!text) return "";
+          return text
+            .toString()
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9]/g, "")
+            .replace(/o/g, '0');
+        };
+        orderData.property.id = normalizeText(orderData.property.reference);
       }
       if (orderData.property && orderData.property.zone) {
         orderData.property.zone = orderData.property.zone.toLowerCase();

@@ -17,8 +17,9 @@ export default function PropertyDetail() {
     async function findProperty() {
       setLoading(true);
       try {
-        // Encontrar en estáticos (normalizado)
-        const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+        // Encontrar en estáticos (normalización ultra-robusta)
+        const normalize = (s: string) => 
+          (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
         const targetId = normalize(id || "");
         
         const staticProp = staticProperties.find(p => normalize(p.id) === targetId);
