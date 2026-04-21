@@ -171,7 +171,8 @@ export function initBot() {
          - zonas-costeras, otras-zonas, singulares
       3. ACCIÓN 'delete': Si el usuario dice 'borra' o 'elimina', extrae la referencia y pon action="delete".
       4. Normalización: Convierte "IC ochomil" a "IC-8000".
-      5. Responde SOLO con el JSON válido.
+      5. FORMATO DE NÚMEROS: En el JSON, envía los números (price, sqm, etc.) como ENTEROS puros, sin puntos ni comas (Ej: 4600000, no 4.600.000).
+      6. Responde SOLO con el JSON válido.
       `;
 
       const completion = await openai.chat.completions.create({

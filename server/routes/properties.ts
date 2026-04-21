@@ -27,10 +27,10 @@ const normalizePropertyData = (data: any) => {
   normalized.bathrooms = data.bathrooms || data.baths || data.aseos || null;
 
   // Limpieza de tipos (asegurar números)
-  if (normalized.size) normalized.size = parseInt(normalized.size.toString().replace(/[^0-9]/g, ''), 10);
-  if (normalized.bedrooms) normalized.bedrooms = parseInt(normalized.bedrooms.toString().replace(/[^0-9]/g, ''), 10);
-  if (normalized.bathrooms) normalized.bathrooms = parseInt(normalized.bathrooms.toString().replace(/[^0-9]/g, ''), 10);
-  if (normalized.price) normalized.price = parseInt(normalized.price.toString().replace(/[^0-9]/g, ''), 10);
+  if (normalized.size) normalized.size = Math.round(Number(normalized.size.toString().replace(/[^0-9]/g, '')));
+  if (normalized.bedrooms) normalized.bedrooms = Math.round(Number(normalized.bedrooms.toString().replace(/[^0-9]/g, '')));
+  if (normalized.bathrooms) normalized.bathrooms = Math.round(Number(normalized.bathrooms.toString().replace(/[^0-9]/g, '')));
+  if (normalized.price) normalized.price = Math.round(Number(normalized.price.toString().replace(/[^0-9]/g, '')));
 
   return normalized;
 };
@@ -47,11 +47,10 @@ const normalizeText = (text: string) => {
     .replace(/o/g, '0');            // Normalizar O por 0 para referencias
 };
 
-// Configure multer for image uploads
+// Configure multer for image uploads (Classic path)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Subida síncrona para evitar errores de Multer con callbacks asíncronos
-    const uploadDir = path.resolve(process.cwd(), "data", "images");
+    const uploadDir = path.resolve(__dirname, "../../client/public/img/properties");
     if (!fsSync.existsSync(uploadDir)) {
       fsSync.mkdirSync(uploadDir, { recursive: true });
     }

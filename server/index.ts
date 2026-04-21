@@ -33,11 +33,9 @@ async function startServer() {
 
   app.use(express.static(staticPath));
 
-  // Serve persistent images from the /app/data volume
-  const persistentImagesPath = path.resolve(process.cwd(), "data", "images");
-  app.use("/img/properties", express.static(persistentImagesPath));
-  // Legacy alias for compatibility with old uploads
-  app.use("/images", express.static(persistentImagesPath));
+  const imagesPath = path.resolve(__dirname, "../../client/public/img/properties");
+  app.use("/img/properties", express.static(imagesPath));
+  app.use("/images", express.static(imagesPath));
 
   // API Routes
   app.use("/api/auth", authRouter);
