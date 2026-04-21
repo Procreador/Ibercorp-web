@@ -7,7 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export function formatPrice(price: string | number) {
   if (!price) return "Consultar";
-  const num = typeof price === 'string' ? parseFloat(price.replace(/[^0-9.]/g, '')) : price;
+  const num = typeof price === 'string' ? parseInt(price.replace(/[^0-9]/g, ''), 10) : price;
   if (isNaN(num)) return price.toString();
   
   return new Intl.NumberFormat('es-ES', {

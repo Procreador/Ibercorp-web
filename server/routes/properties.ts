@@ -27,10 +27,10 @@ const normalizePropertyData = (data: any) => {
   normalized.bathrooms = data.bathrooms || data.baths || data.aseos || null;
 
   // Limpieza de tipos (asegurar números)
-  if (normalized.size) normalized.size = parseInt(normalized.size.toString().replace(/[^0-9]/g, ''));
-  if (normalized.bedrooms) normalized.bedrooms = parseInt(normalized.bedrooms.toString().replace(/[^0-9]/g, ''));
-  if (normalized.bathrooms) normalized.bathrooms = parseInt(normalized.bathrooms.toString().replace(/[^0-9]/g, ''));
-  if (normalized.price) normalized.price = parseFloat(normalized.price.toString().replace(/[^0-9.]/g, ''));
+  if (normalized.size) normalized.size = parseInt(normalized.size.toString().replace(/[^0-9]/g, ''), 10);
+  if (normalized.bedrooms) normalized.bedrooms = parseInt(normalized.bedrooms.toString().replace(/[^0-9]/g, ''), 10);
+  if (normalized.bathrooms) normalized.bathrooms = parseInt(normalized.bathrooms.toString().replace(/[^0-9]/g, ''), 10);
+  if (normalized.price) normalized.price = parseInt(normalized.price.toString().replace(/[^0-9]/g, ''), 10);
 
   return normalized;
 };
@@ -155,7 +155,7 @@ router.post("/", verifyToken, upload.array("images", 20), async (req, res) => {
       });
     }
   } catch (error: any) {
-    console.error("❌ [API POST Error]:", error.message);
+    console.error("❌ [API POST Error]:", error.message, error.stack);
     res.status(500).json({ error: "Operation failed", details: error.message });
   }
 });

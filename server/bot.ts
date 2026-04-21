@@ -7,6 +7,7 @@ import path from "path";
 import os from "os";
 import axios from "axios";
 import FormData from "form-data";
+import { v4 as uuidv4 } from "uuid";
 
 // Almacén temporal de imágenes por usuario
 const userPendingImages: Record<number, string[]> = {};
@@ -103,16 +104,10 @@ export function initBot() {
       
       const fileLink = (await ctx.telegram.getFileLink(photo.file_id)).toString();
       
-      // Guardar localmente en directorio temporal
+      // Guardar localmente en directorio temporal (Usando Buffer para mayor fiabilidad)
       const filePath = path.join(os.tmpdir(), `${Date.now()}-${uuidv4().slice(0, 8)}.jpg`);
-      const response = await axios.get(fileLink, { responseType: 'stream' });
-      const writer = fs.createWriteStream(filePath);
-      response.data.pipe(writer);
-
-      await new Promise((resolve, reject) => {
-        writer.on('finish', resolve);
-        writer.on('error', reject);
-      });
+      const response = await axios.get(fileLink, { responseType: 'arraybuffer' });
+      fs.writeFileSync(filePath, Buffer.from(response.data));
       
       if (!userPendingImages[userId]) userPendingImages[userId] = [];
       userPendingImages[userId].push(filePath);
@@ -137,9 +132,9 @@ export function initBot() {
         }
       }, 2000); // 2 segundos de paciencia para álbumes
 
-    } catch (e) {
-      console.error(e);
-      ctx.reply("❌ Hubo un error procesando la imagen.");
+    } catch (e: any) {
+      console.error("❌ [Bot Image Error]:", e.message, e.stack);
+      ctx.reply(`❌ Error procesando imagen: ${e.message}`);
     }
   });
 
@@ -169,13 +164,13 @@ export function initBot() {
       }
 
       REGLAS DE ORO:
-      1. REFERENCIA: Si no se proporciona una, GENERA UNA ALEATORIA (Ej: IC-5421, IC-9032). NUNCA uses "IC-XXXX".
+      1. REFERENCIA: Si no se proporciona una, GENERA UNA ALEATORIA (Ej: IC-5421). **NUNCA uses "IC-XXXX"**.
       2. ZONAS (Usa estos IDs exactos en el campo 'zone'):
          - madrid-capital, almagro, salamanca, jeronimos, justicia, madrid-capital-otras
          - areas-residenciales, la-moraleja, pozuelo
          - zonas-costeras, otras-zonas, singulares
-      3. Normalización: Convierte "IC ochomil" a "IC-8000".
-      4. Acción 'create': Se usa para añadir. Si el ID ya existe, el servidor lo actualizará.
+      3. ACCIÓN 'delete': Si el usuario dice 'borra' o 'elimina', extrae la referencia y pon action="delete".
+      4. Normalización: Convierte "IC ochomil" a "IC-8000".
       5. Responde SOLO con el JSON válido.
       `;
 
