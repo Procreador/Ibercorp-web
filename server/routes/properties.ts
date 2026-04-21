@@ -120,7 +120,7 @@ router.post("/", verifyToken, upload.array("images", 20), async (req, res) => {
     }
 
     const files = req.files as Express.Multer.File[];
-    const imageUrls = files.map(file => `/images/${file.filename}`);
+    const imageUrls = files.map(file => `/img/properties/${file.filename}`);
     
     const existing = await db.getPropertyById(propertyData.id);
     
