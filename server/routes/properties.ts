@@ -179,9 +179,9 @@ router.put("/:id", verifyToken, upload.array("images", 20), async (req, res) => 
       return res.status(404).json({ error: "Property not found" });
     }
     
-    let images = existing.images || [];
+    let images = propertyData.existingImages ?? (existing.images || []);
     if (files && files.length > 0) {
-      const newImages = files.map(file => `/images/${file.filename}`);
+      const newImages = files.map(file => `/img/properties/${file.filename}`);
       images = [...images, ...newImages];
     }
     
