@@ -26,11 +26,17 @@ const normalizePropertyData = (data: any) => {
   // Mapeo de Baños (baths, aseos -> bathrooms)
   normalized.bathrooms = data.bathrooms || data.baths || data.aseos || null;
 
-  // Limpieza de tipos (asegurar números)
-  if (normalized.size) normalized.size = Math.round(Number(normalized.size.toString().replace(/[^0-9]/g, '')));
-  if (normalized.bedrooms) normalized.bedrooms = Math.round(Number(normalized.bedrooms.toString().replace(/[^0-9]/g, '')));
-  if (normalized.bathrooms) normalized.bathrooms = Math.round(Number(normalized.bathrooms.toString().replace(/[^0-9]/g, '')));
-  if (normalized.price) normalized.price = Math.round(Number(normalized.price.toString().replace(/[^0-9]/g, '')));
+  // Preservar features/características como array
+  if (Array.isArray(data.features)) normalized.features = data.features;
+
+  // Limpieza de tipos numéricos (solo si son números puros, no texto con €)
+  if (normalized.size) normalized.size = Math.round(Number(normalized.size.toString().replace(/[^0-9]/g, ''))) || null;
+  if (normalized.bedrooms) normalized.bedrooms = Math.round(Number(normalized.bedrooms.toString().replace(/[^0-9]/g, ''))) || null;
+  if (normalized.bathrooms) normalized.bathrooms = Math.round(Number(normalized.bathrooms.toString().replace(/[^0-9]/g, ''))) || null;
+  // Precio: solo convertir a número si es un número puro (del bot), preservar texto si viene del admin panel
+  if (normalized.price && typeof normalized.price === 'number') {
+    normalized.price = Math.round(normalized.price);
+  }
 
   return normalized;
 };
@@ -47,10 +53,12 @@ const normalizeText = (text: string) => {
     .replace(/o/g, '0');            // Normalizar O por 0 para referencias
 };
 
-// Configure multer for image uploads (Classic path)
+// Configure multer for image uploads
+// In production (Railway), __dirname is dist/ so we use dist/public/img/properties
+// In development, we also fall back to a persistent path
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = path.resolve(__dirname, "../../client/public/img/properties");
+    const uploadDir = path.resolve(__dirname, "public", "img", "properties");
     if (!fsSync.existsSync(uploadDir)) {
       fsSync.mkdirSync(uploadDir, { recursive: true });
     }
