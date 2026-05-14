@@ -13,6 +13,7 @@ import PropertyDetail from "./pages/PropertyDetail";
 import Nosotros from "./pages/Nosotros";
 import Contacto from "./pages/Contacto";
 import FloatingWhatsApp from "./components/FloatingWhatsApp";
+import AdminPublish from "./pages/AdminPublish";
 
 function Router() {
   return (
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/propiedad/:id" component={PropertyDetail} />
       <Route path="/nosotros" component={Nosotros} />
       <Route path="/contacto" component={Contacto} />
+      <Route path="/gestion-ibercorp-2024" component={AdminPublish} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
