@@ -47,7 +47,7 @@ POST
 #### Headers
 ```json
 {
-  "Authorization": "Bearer c955e8944aec59d673f1fefa2e82b6249675090ac18bc59e20c42a4cfc11419d",
+  "Authorization": "Bearer REEMPLAZAR_POR_UN_TOKEN_NUEVO",
   "Content-Type": "application/json"
 }
 ```
@@ -246,7 +246,7 @@ En la sección "Dynamic Variables":
 ```json
 {
   "api_base_url": "https://tu-dominio.com/api",
-  "api_token": "c955e8944aec59d673f1fefa2e82b6249675090ac18bc59e20c42a4cfc11419d"
+  "api_token": "REEMPLAZAR_POR_UN_TOKEN_NUEVO"
 }
 ```
 

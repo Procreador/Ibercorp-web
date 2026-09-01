@@ -2,10 +2,11 @@ import { useEffect, useRef } from "react";
 import { Link } from "wouter";
 import HeroCarousel from "@/components/HeroCarousel";
 import PropertyCard from "@/components/PropertyCard";
-import { properties } from "@/lib/properties";
+import { useProperties } from "@/hooks/useProperties";
 
 export default function Home() {
   const sectionRefs = useRef<(HTMLElement | null)[]>([]);
+  const { properties, loading } = useProperties();
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -91,27 +92,37 @@ export default function Home() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
-            {properties.slice(0, 3).map((property, i) => (
-              <div
-                key={property.id}
-                className="fade-child"
-                style={{ transitionDelay: `${i * 150}ms` }}
-              >
-                <PropertyCard property={property} />
+          {loading ? (
+            <p className="text-center text-[#8A8A8A]">Cargando propiedades...</p>
+          ) : properties.length > 0 ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
+                {properties.slice(0, 3).map((property, i) => (
+                  <div
+                    key={property.id}
+                    className="fade-child"
+                    style={{ transitionDelay: `${i * 150}ms` }}
+                  >
+                    <PropertyCard property={property} />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
 
-          <div className="text-center mt-14">
-            <Link
-              href="/propiedades"
-              className="inline-block text-[12px] tracking-[0.15em] uppercase text-[#2C2C2C] border-b border-[#B8A07E] pb-1 hover:text-[#B8A07E] transition-colors duration-300"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              VER TODAS LAS PROPIEDADES
-            </Link>
-          </div>
+              <div className="text-center mt-14">
+                <Link
+                  href="/propiedades"
+                  className="inline-block text-[12px] tracking-[0.15em] uppercase text-[#2C2C2C] border-b border-[#B8A07E] pb-1 hover:text-[#B8A07E] transition-colors duration-300"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  VER TODAS LAS PROPIEDADES
+                </Link>
+              </div>
+            </>
+          ) : (
+            <p className="text-center text-[#6B6560]">
+              Consulte con nuestro equipo la cartera privada disponible.
+            </p>
+          )}
         </div>
       </section>
 

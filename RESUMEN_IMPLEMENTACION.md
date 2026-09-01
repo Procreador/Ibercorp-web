@@ -41,12 +41,12 @@
 
 **Token de API:**
 ```
-c955e8944aec59d673f1fefa2e82b6249675090ac18bc59e20c42a4cfc11419d
+REEMPLAZAR_POR_UN_TOKEN_NUEVO
 ```
 
 **Uso:**
 ```bash
-Authorization: Bearer c955e8944aec59d673f1fefa2e82b6249675090ac18bc59e20c42a4cfc11419d
+Authorization: Bearer REEMPLAZAR_POR_UN_TOKEN_NUEVO
 ```
 
 ### 4. Sistema de Subida de Imágenes
@@ -92,7 +92,7 @@ https://3000-ispoekf9gej7phdwlx06v-87110f7e.us1.manus.computer
    - Telegram: Watch Updates
    - OpenAI: Transcripción y extracción de datos
    - HTTP: Llamadas a la API
-4. **Usar el token:** `c955e8944aec59d673f1fefa2e82b6249675090ac18bc59e20c42a4cfc11419d`
+4. **Usar el token:** `REEMPLAZAR_POR_UN_TOKEN_NUEVO`
 
 ### Para ElevenLabs:
 
@@ -118,7 +118,7 @@ pnpm run migrate
 pnpm run build
 
 # Iniciar servidor
-API_TOKEN=c955e8944aec59d673f1fefa2e82b6249675090ac18bc59e20c42a4cfc11419d pnpm start
+API_TOKEN=REEMPLAZAR_POR_UN_TOKEN_NUEVO pnpm start
 
 # Desarrollo
 pnpm run dev
@@ -139,7 +139,7 @@ curl https://tu-dominio.com/api/properties
 ### Crear Propiedad
 ```bash
 curl -X POST https://tu-dominio.com/api/properties \
-  -H "Authorization: Bearer c955e8944aec59d673f1fefa2e82b6249675090ac18bc59e20c42a4cfc11419d" \
+  -H "Authorization: Bearer REEMPLAZAR_POR_UN_TOKEN_NUEVO" \
   -H "Content-Type: application/json" \
   -d '{
     "id": "nueva-propiedad",
@@ -156,7 +156,7 @@ curl -X POST https://tu-dominio.com/api/properties \
 ### Actualizar Precio
 ```bash
 curl -X PUT https://tu-dominio.com/api/properties/ayala-45 \
-  -H "Authorization: Bearer c955e8944aec59d673f1fefa2e82b6249675090ac18bc59e20c42a4cfc11419d" \
+  -H "Authorization: Bearer REEMPLAZAR_POR_UN_TOKEN_NUEVO" \
   -H "Content-Type: application/json" \
   -d '{"price": "5.500.000 €"}'
 ```
@@ -164,7 +164,7 @@ curl -X PUT https://tu-dominio.com/api/properties/ayala-45 \
 ### Eliminar Propiedad
 ```bash
 curl -X DELETE https://tu-dominio.com/api/properties/test-id \
-  -H "Authorization: Bearer c955e8944aec59d673f1fefa2e82b6249675090ac18bc59e20c42a4cfc11419d"
+  -H "Authorization: Bearer REEMPLAZAR_POR_UN_TOKEN_NUEVO"
 ```
 
 ## 📊 Estructura del Proyecto

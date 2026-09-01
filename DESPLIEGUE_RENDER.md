@@ -76,7 +76,7 @@ Haz clic en **"Add Environment Variable"** y agrega:
 
 | Key | Value |
 |-----|-------|
-| `API_TOKEN` | `c955e8944aec59d673f1fefa2e82b6249675090ac18bc59e20c42a4cfc11419d` |
+| `API_TOKEN` | `REEMPLAZAR_POR_UN_TOKEN_NUEVO` |
 | `NODE_ENV` | `production` |
 | `PORT` | `3000` |
 
@@ -198,7 +198,7 @@ Ahora que tienes la URL permanente:
    ```
 3. Header de autorización:
    ```
-   Authorization: Bearer c955e8944aec59d673f1fefa2e82b6249675090ac18bc59e20c42a4cfc11419d
+   Authorization: Bearer REEMPLAZAR_POR_UN_TOKEN_NUEVO
    ```
 
 ### 5.2 ElevenLabs
@@ -316,9 +316,9 @@ Render proporciona:
 
 Si necesitas cambiar el token:
 
-1. Genera uno nuevo:
+1. Genera uno nuevo localmente (el servidor no expone un generador público):
    ```bash
-   curl -X POST https://ibercorp-web.onrender.com/api/generate-token
+   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
    ```
 2. Actualiza en Render:
    - Ve a **"Environment"**

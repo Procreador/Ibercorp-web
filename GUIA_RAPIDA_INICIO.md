@@ -18,7 +18,7 @@ Has recibido el sistema completo de automatización para IBERCORP.com que incluy
 1. Abre el archivo `INTEGRACION_TELEGRAM_MAKE.md`
 2. Sigue las instrucciones paso a paso
 3. Configura Make.com con tu bot de Telegram
-4. Usa el token: `c955e8944aec59d673f1fefa2e82b6249675090ac18bc59e20c42a4cfc11419d`
+4. Usa el token: `REEMPLAZAR_POR_UN_TOKEN_NUEVO`
 
 **Resultado:** Podrás enviar mensajes de voz + fotos por Telegram y se añadirán automáticamente a la web.
 
@@ -36,7 +36,7 @@ Has recibido el sistema completo de automatización para IBERCORP.com que incluy
 
 ### Token de API
 ```
-c955e8944aec59d673f1fefa2e82b6249675090ac18bc59e20c42a4cfc11419d
+REEMPLAZAR_POR_UN_TOKEN_NUEVO
 ```
 
 **⚠️ Guarda este token de forma segura. Lo necesitas para:**
@@ -83,7 +83,7 @@ pnpm run build
 
 ### 4. Iniciar Servidor
 ```bash
-API_TOKEN=c955e8944aec59d673f1fefa2e82b6249675090ac18bc59e20c42a4cfc11419d pnpm start
+API_TOKEN=REEMPLAZAR_POR_UN_TOKEN_NUEVO pnpm start
 ```
 
 ## 🧪 Probar la API
@@ -101,7 +101,7 @@ curl https://tu-dominio.com/api/properties
 ### Crear Propiedad (con token)
 ```bash
 curl -X POST https://tu-dominio.com/api/properties \
-  -H "Authorization: Bearer c955e8944aec59d673f1fefa2e82b6249675090ac18bc59e20c42a4cfc11419d" \
+  -H "Authorization: Bearer REEMPLAZAR_POR_UN_TOKEN_NUEVO" \
   -H "Content-Type: application/json" \
   -d '{
     "id": "test-propiedad",
@@ -164,7 +164,7 @@ COPY package.json pnpm-lock.yaml ./
 RUN npm install -g pnpm && pnpm install
 COPY . .
 RUN pnpm run build
-ENV API_TOKEN=c955e8944aec59d673f1fefa2e82b6249675090ac18bc59e20c42a4cfc11419d
+ENV API_TOKEN=REEMPLAZAR_POR_UN_TOKEN_NUEVO
 ENV PORT=3000
 CMD ["pnpm", "start"]
 ```
