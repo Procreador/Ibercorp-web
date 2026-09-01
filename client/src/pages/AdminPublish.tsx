@@ -3,13 +3,15 @@ import { zones } from "@/lib/properties";
 
 const PUBLISHABLE_ZONES = zones.filter(z => z.id !== "madrid-capital" && z.id !== "areas-residenciales");
 const BADGE_OPTIONS = ["NUEVO", "PREMIUM", "REFORMADO", "CON GARAJE", "ÁTICO EXCLUSIVO", "CÉNTRICA", "OPORTUNIDAD", "EXCLUSIVA"];
-const TOKEN = "ibercorp_dev_token_2024";
 
 const genRef = () => "IC-" + Math.floor(1000 + Math.random() * 9000);
 const normId = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/g,"").replace(/o/g,"0");
-const emptyForm = () => ({ title:"", address:"", zone:"", price:"", size:"", bedrooms:"", bathrooms:"", description:"", badge:"NUEVO", reference: genRef() });
+const emptyForm = () => ({ title:"", address:"", zone:"", price:"", size:"", bedrooms:"", bathrooms:"", year:"", description:"", badge:"NUEVO", reference: genRef() });
 
 export default function AdminPublish() {
+  const [authenticated, setAuthenticated] = useState<boolean>();
+  const [password, setPassword] = useState("");
+  const [loginBusy, setLoginBusy] = useState(false);
   const [props, setProps] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(emptyForm());
@@ -32,7 +34,40 @@ export default function AdminPublish() {
     setLoading(false);
   };
 
-  useEffect(() => { loadProps(); }, []);
+  useEffect(() => {
+    fetch("/api/auth/session")
+      .then(r => r.json())
+      .then(data => {
+        const loggedIn = data.authenticated === true;
+        setAuthenticated(loggedIn);
+        if (loggedIn) loadProps();
+      })
+      .catch(() => setAuthenticated(false));
+  }, []);
+
+  const login = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginBusy(true); setErrMsg("");
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo iniciar sesión.");
+      setPassword(""); setAuthenticated(true); await loadProps();
+    } catch (error: any) {
+      setErrMsg(error.message || "No se pudo iniciar sesión.");
+    } finally {
+      setLoginBusy(false);
+    }
+  };
+
+  const logout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    setAuthenticated(false); setProps([]); setPassword("");
+  };
 
   const fc = (e: React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>) =>
     setForm(p => ({ ...p, [e.target.name]: e.target.value }));
@@ -41,36 +76,52 @@ export default function AdminPublish() {
 
   const addImgs = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setNewImgs(p => [...p, ...files]);
-    setNewPreviews(p => [...p, ...files.map(f => URL.createObjectURL(f))]);
+    const available = Math.max(0, 20 - keepImgs.length - newImgs.length);
+    const accepted = files
+      .filter(file => ["image/jpeg", "image/png", "image/webp"].includes(file.type))
+      .slice(0, available);
+    if (accepted.length !== files.length) {
+      setErrMsg("Máximo 20 fotografías; solo JPG, PNG o WebP.");
+    }
+    setNewImgs(p => [...p, ...accepted]);
+    setNewPreviews(p => [...p, ...accepted.map(f => URL.createObjectURL(f))]);
+  };
+
+  const clearNewImages = () => {
+    newPreviews.forEach(src => URL.revokeObjectURL(src));
+    setNewImgs([]); setNewPreviews([]);
+    if (fileRef.current) fileRef.current.value = "";
   };
 
   const startEdit = (p: any) => {
     setEditId(p.id);
     setForm({ title: p.title||"", address: p.address||"", zone: p.zone||"", price: p.price||"",
-      size: p.size?.toString()||"", bedrooms: p.bedrooms?.toString()||"", bathrooms: p.bathrooms?.toString()||"",
+      size: p.size?.toString()||"", bedrooms: p.bedrooms?.toString()||"", bathrooms: p.bathrooms?.toString()||"", year: p.year?.toString()||"",
       description: p.description||"", badge: p.badge||"NUEVO", reference: p.reference||genRef() });
     setFeatures(p.features||[]);
     setKeepImgs(p.images||[]);
-    setNewImgs([]); setNewPreviews([]);
+    clearNewImages();
     setStatus("idle"); setErrMsg("");
     setTimeout(() => formRef.current?.scrollIntoView({ behavior:"smooth" }), 100);
   };
 
   const cancelEdit = () => {
     setEditId(null); setForm(emptyForm()); setFeatures([]);
-    setKeepImgs([]); setNewImgs([]); setNewPreviews([]);
+    setKeepImgs([]); clearNewImages();
     setStatus("idle"); setErrMsg("");
   };
 
   const deleteProp = async (id: string) => {
-    await fetch(`/api/properties/${id}`, { method:"DELETE", headers:{ Authorization:`Bearer ${TOKEN}` }});
+    const res = await fetch(`/api/properties/${id}`, { method:"DELETE" });
+    if (res.status === 401) { setAuthenticated(false); return; }
+    if (!res.ok) { setErrMsg("No se pudo eliminar la propiedad."); return; }
     setDelConfirm(null); loadProps();
   };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title || !form.zone || !form.address) { setErrMsg("Título, Dirección y Zona son obligatorios."); return; }
+    if (!editId && newImgs.length === 0) { setErrMsg("Añade al menos una fotografía."); return; }
     setStatus("loading"); setErrMsg("");
 
     const ref = form.reference || genRef();
@@ -79,6 +130,7 @@ export default function AdminPublish() {
       size: form.size ? parseInt(form.size) : null,
       bedrooms: form.bedrooms ? parseInt(form.bedrooms) : null,
       bathrooms: form.bathrooms ? parseInt(form.bathrooms) : null,
+      year: form.year,
       description: form.description, features, badge: form.badge, reference: ref,
     };
     if (!editId) data.id = normId(ref);
@@ -91,14 +143,13 @@ export default function AdminPublish() {
     try {
       const res = await fetch(editId ? `/api/properties/${editId}` : "/api/properties", {
         method: editId ? "PUT" : "POST",
-        headers: { Authorization: `Bearer ${TOKEN}` },
         body: fd,
       });
       if (res.ok) {
-        setSuccessRef(ref); setStatus("success");
-        cancelEdit(); loadProps();
+        cancelEdit(); setSuccessRef(ref); setStatus("success"); loadProps();
       } else {
         const err = await res.json();
+        if (res.status === 401) setAuthenticated(false);
         setErrMsg(err.error || "Error del servidor."); setStatus("error");
       }
     } catch (err: any) {
@@ -108,12 +159,36 @@ export default function AdminPublish() {
 
   const zoneName = (id: string) => zones.find(z => z.id === id)?.name || id;
 
+  if (authenticated === undefined) {
+    return <div className="min-h-screen pt-40 text-center text-gray-500">Comprobando acceso...</div>;
+  }
+
+  if (!authenticated) {
+    return (
+      <div className="min-h-screen bg-[#F8F6F2] pt-32 pb-20 px-4">
+        <form onSubmit={login} className="max-w-md mx-auto bg-white border border-gray-100 rounded-xl shadow-sm p-8">
+          <span className="text-[10px] tracking-[0.4em] text-[#B8A07E] uppercase font-bold block mb-2">IBERCORP</span>
+          <h1 className="text-3xl font-light text-[#2C2C2C] mb-3" style={{ fontFamily:"Playfair Display, serif" }}>Panel de Gestión</h1>
+          <p className="text-gray-500 text-sm mb-8">Introduce la clave privada para gestionar el catálogo.</p>
+          <label className="block text-xs tracking-widest uppercase text-gray-500 mb-2">Clave de acceso</label>
+          <input type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" required
+            className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#B8A07E]" />
+          {errMsg && <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{errMsg}</div>}
+          <button type="submit" disabled={loginBusy} className="w-full mt-6 py-4 bg-[#2C2C2C] text-white text-sm tracking-[0.2em] uppercase rounded-lg disabled:opacity-50">
+            {loginBusy ? "Accediendo..." : "Entrar"}
+          </button>
+        </form>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#F8F6F2] pt-24 pb-20 px-4">
       <div className="max-w-3xl mx-auto">
 
         {/* Header */}
-        <div className="mb-10 text-center">
+        <div className="mb-10 text-center relative">
+          <button type="button" onClick={logout} className="absolute right-0 top-0 text-xs text-gray-400 hover:text-[#2C2C2C]">Cerrar sesión</button>
           <span className="text-[10px] tracking-[0.4em] text-[#B8A07E] uppercase font-bold block mb-2">IBERCORP</span>
           <h1 className="text-3xl font-light tracking-[0.15em] text-[#2C2C2C] uppercase mb-2" style={{ fontFamily:"Playfair Display, serif" }}>
             Panel de Gestión
@@ -247,8 +322,8 @@ export default function AdminPublish() {
               </div>
             </div>
 
-            {/* Hab + Banos */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Habitaciones + baños + año */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs tracking-widest uppercase text-gray-500 mb-2">Habitaciones</label>
                 <input name="bedrooms" value={form.bedrooms} onChange={fc} type="number" min="0" placeholder="Ej: 3"
@@ -257,6 +332,11 @@ export default function AdminPublish() {
               <div>
                 <label className="block text-xs tracking-widest uppercase text-gray-500 mb-2">Baños</label>
                 <input name="bathrooms" value={form.bathrooms} onChange={fc} type="number" min="0" placeholder="Ej: 2"
+                  className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#B8A07E] transition-colors" />
+              </div>
+              <div>
+                <label className="block text-xs tracking-widest uppercase text-gray-500 mb-2">Año</label>
+                <input name="year" value={form.year} onChange={fc} type="number" min="1000" max="2100" placeholder="Ej: 1985"
                   className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#B8A07E] transition-colors" />
               </div>
             </div>
@@ -322,14 +402,14 @@ export default function AdminPublish() {
                 <div className="text-4xl mb-2">📷</div>
                 <p className="text-gray-500 text-sm">Haz clic para seleccionar fotos</p>
                 <p className="text-gray-400 text-xs mt-1">JPG, PNG o WEBP — varias a la vez</p>
-                <input ref={fileRef} type="file" multiple accept="image/*" className="hidden" onChange={addImgs} />
+                <input ref={fileRef} type="file" multiple accept="image/jpeg,image/png,image/webp" className="hidden" onChange={addImgs} />
               </div>
               {newPreviews.length > 0 && (
                 <div className="grid grid-cols-3 md:grid-cols-4 gap-3 mt-4">
                   {newPreviews.map((src, i) => (
                     <div key={i} className="relative group aspect-square">
                       <img src={src} alt="" className="w-full h-full object-cover rounded-lg" />
-                      <button type="button" onClick={() => { setNewImgs(p => p.filter((_,j) => j !== i)); setNewPreviews(p => p.filter((_,j) => j !== i)); }}
+                      <button type="button" onClick={() => { URL.revokeObjectURL(src); setNewImgs(p => p.filter((_,j) => j !== i)); setNewPreviews(p => p.filter((_,j) => j !== i)); }}
                         className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         ✕
                       </button>

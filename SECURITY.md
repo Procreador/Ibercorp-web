@@ -7,7 +7,7 @@ El sistema utiliza un token de autenticación para proteger los endpoints de ges
 ### Token Actual
 
 ```
-c955e8944aec59d673f1fefa2e82b6249675090ac18bc59e20c42a4cfc11419d
+REEMPLAZAR_POR_UN_TOKEN_NUEVO
 ```
 
 **⚠️ IMPORTANTE: Guarda este token de forma segura. Lo necesitarás para:**
@@ -20,7 +20,7 @@ c955e8944aec59d673f1fefa2e82b6249675090ac18bc59e20c42a4cfc11419d
 Incluye el token en el header `Authorization` de todas las peticiones a endpoints protegidos:
 
 ```bash
-Authorization: Bearer c955e8944aec59d673f1fefa2e82b6249675090ac18bc59e20c42a4cfc11419d
+Authorization: Bearer REEMPLAZAR_POR_UN_TOKEN_NUEVO
 ```
 
 ### Endpoints Protegidos
@@ -59,7 +59,7 @@ API_TOKEN=tu_nuevo_token_aqui
 El token se configura en el archivo `.env`:
 
 ```env
-API_TOKEN=c955e8944aec59d673f1fefa2e82b6249675090ac18bc59e20c42a4cfc11419d
+API_TOKEN=REEMPLAZAR_POR_UN_TOKEN_NUEVO
 PORT=3000
 NODE_ENV=development
 ```
@@ -78,7 +78,7 @@ Para producción, asegúrate de:
 
 ```bash
 curl -X POST https://tu-dominio.com/api/properties \
-  -H "Authorization: Bearer c955e8944aec59d673f1fefa2e82b6249675090ac18bc59e20c42a4cfc11419d" \
+  -H "Authorization: Bearer REEMPLAZAR_POR_UN_TOKEN_NUEVO" \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Piso en Salamanca",

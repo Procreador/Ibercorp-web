@@ -1,276 +1,310 @@
 import { Router } from "express";
-import { verifyToken } from "./auth.js";
-import { db } from "../db/index.js";
-import multer from "multer";
-import path from "path";
-import { fileURLToPath } from "url";
 import fs from "fs/promises";
-import fsSync from "fs";
+import path from "path";
+import multer from "multer";
 import { v4 as uuidv4 } from "uuid";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { z } from "zod";
+import { uploadsDir } from "../config.js";
+import { db, type Property } from "../db/index.js";
+import { verifyToken } from "./auth.js";
 
 export const router = Router();
 
-// Normalizador Universal de datos (Idealista style)
-const normalizePropertyData = (data: any) => {
-  const normalized = { ...data };
-  
-  // Mapeo de Área (sqm, m2, metros -> size)
-  normalized.size = data.size || data.sqm || data.m2 || data.superficie || null;
-  
-  // Mapeo de Dormitorios (beds, habitaciones -> bedrooms)
-  normalized.bedrooms = data.bedrooms || data.beds || data.habitaciones || data.cuartos || null;
-  
-  // Mapeo de Baños (baths, aseos -> bathrooms)
-  normalized.bathrooms = data.bathrooms || data.baths || data.aseos || null;
+const allowedMimeTypes = new Map([
+  ["image/jpeg", ".jpg"],
+  ["image/png", ".png"],
+  ["image/webp", ".webp"],
+]);
 
-  // Preservar features/características como array
-  if (Array.isArray(data.features)) normalized.features = data.features;
-
-  // Limpieza de tipos numéricos (solo si son números puros, no texto con €)
-  if (normalized.size) normalized.size = Math.round(Number(normalized.size.toString().replace(/[^0-9]/g, ''))) || null;
-  if (normalized.bedrooms) normalized.bedrooms = Math.round(Number(normalized.bedrooms.toString().replace(/[^0-9]/g, ''))) || null;
-  if (normalized.bathrooms) normalized.bathrooms = Math.round(Number(normalized.bathrooms.toString().replace(/[^0-9]/g, ''))) || null;
-  // Precio: solo convertir a número si es un número puro (del bot), preservar texto si viene del admin panel
-  if (normalized.price && typeof normalized.price === 'number') {
-    normalized.price = Math.round(normalized.price);
-  }
-
-  return normalized;
-};
-
-// Normalización Universal de texto (acentos, mayúsculas, etc.)
-const normalizeText = (text: string) => {
-  if (!text) return "";
-  return text
-    .toString()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // Eliminar acentos
-    .replace(/[^a-z0-9]/g, "")      // Solo alfanumérico
-    .replace(/o/g, '0');            // Normalizar O por 0 para referencias
-};
-
-// Configure multer for image uploads
-// In production (Railway), __dirname is dist/ so we use dist/public/img/properties
-// In development, we also fall back to a persistent path
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.resolve(__dirname, "public", "img", "properties");
-    if (!fsSync.existsSync(uploadDir)) {
-      fsSync.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = `${uuidv4()}${path.extname(file.originalname)}`;
-    cb(null, uniqueName);
+  destination: uploadsDir,
+  filename: (_req, file, callback) => {
+    callback(null, `${uuidv4()}${allowedMimeTypes.get(file.mimetype) || ".jpg"}`);
   },
 });
 
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|webp/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    
-    if (extname && mimetype) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only image files are allowed (jpeg, jpg, png, webp)"));
-    }
+  limits: { fileSize: 10 * 1024 * 1024, files: 20 },
+  fileFilter: (_req, file, callback) => {
+    if (allowedMimeTypes.has(file.mimetype)) callback(null, true);
+    else callback(new Error("Solo se admiten imágenes JPG, PNG o WebP."));
   },
 });
 
-// GET all properties (public)
-router.get("/", async (req, res) => {
+const imagePathSchema = z
+  .string()
+  .max(500)
+  .refine(
+    (value) => value.startsWith("/uploads/") || value.startsWith("/img/"),
+    "Ruta de imagen no válida",
+  );
+
+const numericInput = z.union([z.number(), z.string()]).optional().nullable();
+
+const propertyInputSchema = z
+  .object({
+    id: z.string().trim().max(160).optional(),
+    title: z.string().trim().max(160).optional(),
+    address: z.string().trim().max(220).optional(),
+    zone: z.string().trim().max(80).optional(),
+    price: z.union([z.string().trim().max(80), z.number()]).optional().nullable(),
+    size: numericInput,
+    sqm: numericInput,
+    m2: numericInput,
+    superficie: numericInput,
+    bedrooms: numericInput,
+    beds: numericInput,
+    habitaciones: numericInput,
+    cuartos: numericInput,
+    bathrooms: numericInput,
+    baths: numericInput,
+    aseos: numericInput,
+    year: z.union([z.string(), z.number()]).optional().nullable(),
+    description: z.string().trim().max(12000).optional(),
+    features: z.array(z.string().trim().min(1).max(240)).max(50).optional(),
+    images: z.array(imagePathSchema).max(20).optional(),
+    existingImages: z.array(imagePathSchema).max(20).optional(),
+    reference: z.string().trim().max(80).optional(),
+    ref: z.string().trim().max(80).optional(),
+    badge: z.string().trim().max(80).optional(),
+    tag: z.string().trim().max(80).optional(),
+  })
+  .passthrough();
+
+function normalizeText(text = "") {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "")
+    .replace(/o/g, "0");
+}
+
+function toInteger(value: unknown): number | undefined {
+  if (value === null || value === undefined || value === "") return undefined;
+  const digits = String(value).replace(/[^0-9]/g, "");
+  if (!digits) return undefined;
+  const number = Number(digits);
+  return Number.isSafeInteger(number) ? number : undefined;
+}
+
+function normalizePropertyData(raw: unknown): Partial<Property> & {
+  existingImages?: string[];
+} {
+  const data = propertyInputSchema.parse(raw);
+  const reference = data.reference || data.ref;
+  return {
+    id: data.id || (reference ? normalizeText(reference) : undefined),
+    title: data.title,
+    address: data.address,
+    zone: data.zone,
+    price:
+      data.price === null || data.price === undefined
+        ? undefined
+        : typeof data.price === "number"
+          ? Math.round(data.price)
+          : data.price,
+    size: toInteger(data.size ?? data.sqm ?? data.m2 ?? data.superficie),
+    bedrooms: toInteger(
+      data.bedrooms ?? data.beds ?? data.habitaciones ?? data.cuartos,
+    ),
+    bathrooms: toInteger(data.bathrooms ?? data.baths ?? data.aseos),
+    year:
+      data.year === null || data.year === undefined ? undefined : String(data.year),
+    description: data.description,
+    features: data.features,
+    images: data.images,
+    existingImages: data.existingImages,
+    reference,
+    badge: data.badge || data.tag,
+  };
+}
+
+function omitUndefined<T extends Record<string, unknown>>(value: T) {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, entry]) => entry !== undefined),
+  );
+}
+
+function uploadedImages(files: Express.Multer.File[] = []): string[] {
+  return files.map((file) => `/uploads/${file.filename}`);
+}
+
+async function deleteUploadedImage(image: string): Promise<void> {
+  if (!image.startsWith("/uploads/")) return;
+  const filename = path.basename(image);
+  if (!filename || filename !== image.slice("/uploads/".length)) return;
+
   try {
-    const properties = await db.getAllProperties();
-    res.json(properties);
+    await fs.unlink(path.join(uploadsDir, filename));
   } catch (error) {
-    console.error("Error fetching properties:", error);
-    res.status(500).json({ error: "Failed to fetch properties" });
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      console.error("No se pudo eliminar una imagen:", error);
+    }
+  }
+}
+
+async function cleanupFiles(files: Express.Multer.File[] = []): Promise<void> {
+  await Promise.all(
+    files.map((file) => deleteUploadedImage(`/uploads/${file.filename}`)),
+  );
+}
+
+function parseBody(rawData: unknown) {
+  if (typeof rawData !== "string") {
+    throw new Error("Faltan los datos de la propiedad.");
+  }
+  return normalizePropertyData(JSON.parse(rawData));
+}
+
+function findProperty(id: string) {
+  const direct = db.getPropertyById(id);
+  if (direct) return direct;
+  const normalizedId = normalizeText(id);
+  return (
+    db
+      .getAllProperties()
+      .find(
+        (property) =>
+          normalizeText(property.id) === normalizedId ||
+          normalizeText(property.reference) === normalizedId,
+      ) || null
+  );
+}
+
+router.get("/", (_req, res) => {
+  try {
+    res.json(db.getAllProperties());
+  } catch (error) {
+    console.error("Error al consultar propiedades:", error);
+    res.status(500).json({ error: "No se pudieron cargar las propiedades." });
   }
 });
 
-// GET single property by ID (public)
-router.get("/:id", async (req, res) => {
+router.get("/:id", (req, res) => {
   try {
-    const property = await db.getPropertyById(req.params.id);
+    const property = findProperty(req.params.id);
     if (!property) {
-      return res.status(404).json({ error: "Property not found" });
+      return res.status(404).json({ error: "Propiedad no encontrada." });
     }
     res.json(property);
   } catch (error) {
-    console.error("Error fetching property:", error);
-    res.status(500).json({ error: "Failed to fetch property" });
+    console.error("Error al consultar la propiedad:", error);
+    res.status(500).json({ error: "No se pudo cargar la propiedad." });
   }
 });
 
-// POST create or update property (Smart Upsert)
 router.post("/", verifyToken, upload.array("images", 20), async (req, res) => {
+  const files = (req.files as Express.Multer.File[] | undefined) || [];
+
   try {
-    const rawData = JSON.parse(req.body.data || "{}");
-    const propertyData = normalizePropertyData(rawData);
-    
-    // Generar ID único basado en referencia si no existe
-    if (!propertyData.id && propertyData.reference) {
-      propertyData.id = normalizeText(propertyData.reference);
+    const data = parseBody(req.body.data);
+    if (!data.id || !data.title) {
+      await cleanupFiles(files);
+      return res.status(400).json({
+        error: "La referencia y el título son obligatorios.",
+      });
     }
 
-    if (!propertyData.id || !propertyData.title) {
-      return res.status(400).json({ error: "Missing required fields (id/reference and title)" });
+    const existing = findProperty(data.id);
+    const retainedImages = data.images || existing?.images || [];
+    if (retainedImages.length + files.length > 20) {
+      await cleanupFiles(files);
+      return res
+        .status(400)
+        .json({ error: "Se admiten como máximo 20 fotografías." });
     }
 
-    const files = req.files as Express.Multer.File[];
-    const imageUrls = files.map(file => `/img/properties/${file.filename}`);
-    
-    const existing = await db.getPropertyById(propertyData.id);
-    
+    const images = [...retainedImages, ...uploadedImages(files)];
     if (existing) {
-      // SMART UPSERT: Si existe, actualizamos
-      const updatedImages = [...(existing.images || []), ...imageUrls];
-      await db.updateProperty(propertyData.id, { 
-        ...propertyData, 
-        images: updatedImages 
-      });
-      
-      const updated = await db.getPropertyById(propertyData.id);
-      return res.status(200).json({
-        success: true,
-        message: "Property updated successfully (Upsert)",
-        property: updated,
-      });
-    } else {
-      // Creación normal
-      const newProperty = {
-        ...propertyData,
-        images: imageUrls,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      await db.createProperty(newProperty as any);
-      return res.status(201).json({
-        success: true,
-        message: "Property created successfully",
-        property: newProperty,
-      });
-    }
-  } catch (error: any) {
-    console.error("❌ [API POST Error]:", error.message, error.stack);
-    res.status(500).json({ error: "Operation failed", details: error.message });
-  }
-});
-
-// PUT update property (protected with Fuzzy Search)
-router.put("/:id", verifyToken, upload.array("images", 20), async (req, res) => {
-  try {
-    const id = req.params.id;
-    const rawData = JSON.parse(req.body.data || "{}");
-    const propertyData = normalizePropertyData(rawData);
-    const files = req.files as Express.Multer.File[];
-    
-    let existing = await db.getPropertyById(id);
-    
-    // Búsqueda flexible si no hay ID exacto
-    if (!existing) {
-      const all = await db.getAllProperties();
-      existing = all.find(p => normalizeText(p.id) === normalizeText(id) || normalizeText(p.reference) === normalizeText(id));
+      const { existingImages: _existingImages, ...rawUpdates } = data;
+      const updates = omitUndefined(rawUpdates) as Partial<Property>;
+      const updated = db.updateProperty(existing.id, { ...updates, images });
+      return res.json({ success: true, property: updated });
     }
 
-    if (!existing) {
-      return res.status(404).json({ error: "Property not found" });
-    }
-    
-    let images = propertyData.existingImages ?? (existing.images || []);
-    if (files && files.length > 0) {
-      const newImages = files.map(file => `/img/properties/${file.filename}`);
-      images = [...images, ...newImages];
-    }
-    
-    const updatedProperty = {
-      ...existing,
-      ...propertyData,
+    const property: Property = {
+      id: data.id,
+      title: data.title,
+      address: data.address || "Dirección pendiente",
+      zone: data.zone || "otras-zonas",
+      price: data.price,
+      size: data.size,
+      bedrooms: data.bedrooms,
+      bathrooms: data.bathrooms,
+      year: data.year,
+      description: data.description || "",
+      features: data.features || [],
       images,
-      updatedAt: new Date().toISOString(),
+      reference: data.reference,
+      badge: data.badge || "NUEVO",
     };
-    
-    await db.updateProperty(existing.id, updatedProperty);
-    
-    res.json({
-      success: true,
-      message: "Property updated successfully",
-      property: updatedProperty,
-    });
-  } catch (error: any) {
-    console.error("❌ [API Update Error]:", error.message);
-    res.status(500).json({ error: "Failed to update property", details: error.message });
+
+    const created = db.createProperty(property);
+    return res.status(201).json({ success: true, property: created });
+  } catch (error) {
+    await cleanupFiles(files);
+    if (error instanceof z.ZodError || error instanceof SyntaxError) {
+      return res.status(400).json({ error: "Revisa los datos del formulario." });
+    }
+    console.error("Error al crear la propiedad:", error);
+    return res.status(500).json({ error: "No se pudo crear la propiedad." });
   }
 });
 
-// DELETE property (protected with Fuzzy Search)
+router.put("/:id", verifyToken, upload.array("images", 20), async (req, res) => {
+  const files = (req.files as Express.Multer.File[] | undefined) || [];
+
+  try {
+    const existing = findProperty(req.params.id);
+    if (!existing) {
+      await cleanupFiles(files);
+      return res.status(404).json({ error: "Propiedad no encontrada." });
+    }
+
+    const data = parseBody(req.body.data);
+    const retainedImages =
+      data.existingImages ?? data.images ?? existing.images ?? [];
+    if (retainedImages.length + files.length > 20) {
+      await cleanupFiles(files);
+      return res
+        .status(400)
+        .json({ error: "Se admiten como máximo 20 fotografías." });
+    }
+
+    const images = [...retainedImages, ...uploadedImages(files)];
+    const removedImages = (existing.images || []).filter(
+      (image) => !images.includes(image),
+    );
+    const { existingImages: _existingImages, ...rawUpdates } = data;
+    const updates = omitUndefined(rawUpdates) as Partial<Property>;
+    const updated = db.updateProperty(existing.id, { ...updates, images });
+    await Promise.all(removedImages.map(deleteUploadedImage));
+
+    return res.json({ success: true, property: updated });
+  } catch (error) {
+    await cleanupFiles(files);
+    if (error instanceof z.ZodError || error instanceof SyntaxError) {
+      return res.status(400).json({ error: "Revisa los datos del formulario." });
+    }
+    console.error("Error al actualizar la propiedad:", error);
+    return res.status(500).json({ error: "No se pudo actualizar la propiedad." });
+  }
+});
+
 router.delete("/:id", verifyToken, async (req, res) => {
   try {
-    const id = req.params.id;
-    let existing = await db.getPropertyById(id);
-    
+    const existing = findProperty(req.params.id);
     if (!existing) {
-      const all = await db.getAllProperties();
-      existing = all.find(p => normalizeText(p.id) === normalizeText(id) || normalizeText(p.reference) === normalizeText(id));
+      return res.status(404).json({ error: "Propiedad no encontrada." });
     }
 
-    if (!existing) {
-      return res.status(404).json({ error: "Property not found" });
-    }
-    
-    await db.deleteProperty(existing.id);
-    
-    res.json({
-      success: true,
-      message: "Property deleted successfully",
-    });
-  } catch (error: any) {
-    console.error("❌ [API Delete Error]:", error.message);
-    res.status(500).json({ error: "Failed to delete property" });
-  }
-});
-
-// POST upload images for existing property (protected)
-router.post("/:id/images", verifyToken, upload.array("images", 20), async (req, res) => {
-  try {
-    const propertyId = req.params.id;
-    const files = req.files as Express.Multer.File[];
-    
-    if (!files || files.length === 0) {
-      return res.status(400).json({ error: "No images provided" });
-    }
-    
-    const property = await db.getPropertyById(propertyId);
-    if (!property) {
-      return res.status(404).json({ error: "Property not found" });
-    }
-    
-    const newImages = files.map(file => `/img/properties/${file.filename}`);
-    const updatedImages = [...(property.images || []), ...newImages];
-    
-    await db.updateProperty(propertyId, {
-      ...property,
-      images: updatedImages,
-      updatedAt: new Date().toISOString(),
-    });
-    
-    res.json({
-      success: true,
-      message: `${newImages.length} image(s) uploaded successfully`,
-      images: newImages,
-    });
+    db.deleteProperty(existing.id);
+    await Promise.all((existing.images || []).map(deleteUploadedImage));
+    return res.json({ success: true });
   } catch (error) {
-    console.error("Error uploading images:", error);
-    res.status(500).json({ error: "Failed to upload images" });
+    console.error("Error al eliminar la propiedad:", error);
+    return res.status(500).json({ error: "No se pudo eliminar la propiedad." });
   }
 });

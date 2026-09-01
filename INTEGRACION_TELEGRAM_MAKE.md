@@ -76,7 +76,7 @@ Ya tienes el bot creado. Necesitarás:
    - Method: `POST`
    - Headers:
      ```
-     Authorization: Bearer c955e8944aec59d673f1fefa2e82b6249675090ac18bc59e20c42a4cfc11419d
+     Authorization: Bearer REEMPLAZAR_POR_UN_TOKEN_NUEVO
      Content-Type: multipart/form-data
      ```
    - Body:
@@ -157,7 +157,7 @@ https://tu-dominio.com/api
 ### Autenticación
 Todas las peticiones protegidas requieren el header:
 ```
-Authorization: Bearer c955e8944aec59d673f1fefa2e82b6249675090ac18bc59e20c42a4cfc11419d
+Authorization: Bearer REEMPLAZAR_POR_UN_TOKEN_NUEVO
 ```
 
 ### Endpoints Disponibles
@@ -250,7 +250,7 @@ GET /api/properties/{id}
 ```bash
 # Crear propiedad
 curl -X POST https://tu-dominio.com/api/properties \
-  -H "Authorization: Bearer c955e8944aec59d673f1fefa2e82b6249675090ac18bc59e20c42a4cfc11419d" \
+  -H "Authorization: Bearer REEMPLAZAR_POR_UN_TOKEN_NUEVO" \
   -F 'data={"title":"Test","address":"Calle Test","zone":"salamanca","price":"1.000.000 €"}' \
   -F 'images=@foto1.jpg' \
   -F 'images=@foto2.jpg'
@@ -260,7 +260,7 @@ curl https://tu-dominio.com/api/properties
 
 # Eliminar propiedad
 curl -X DELETE https://tu-dominio.com/api/properties/test-id \
-  -H "Authorization: Bearer c955e8944aec59d673f1fefa2e82b6249675090ac18bc59e20c42a4cfc11419d"
+  -H "Authorization: Bearer REEMPLAZAR_POR_UN_TOKEN_NUEVO"
 ```
 
 ## 📞 Soporte
