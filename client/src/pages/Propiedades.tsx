@@ -1,19 +1,23 @@
-import { useEffect, useRef, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { filterProperties } from "@/lib/property-search";
 import PropertyCard from "@/components/PropertyCard";
 import PropertySidebar from "@/components/PropertySidebar";
 import PropertiesCategoryMenu from "@/components/PropertiesCategoryMenu";
 import { properties as staticProperties, zones, Property } from "@/lib/properties";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link, useLocation, useSearchParams } from "wouter";
+import { Link, useSearchParams } from "wouter";
 
 export default function Propiedades() {
   const [dbProperties, setDbProperties] = useState<Property[]>([]);
-  const [location] = useLocation();
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [searchParams] = useSearchParams();
 
   // El Hook useSearchParams() es reactivo, por lo que el componente se 
   // actualizará automáticamente cuando cambie la query string (?zona=...)
   const selectedZone = searchParams.get('zona');
+  const query = searchParams.get('q')?.trim() || '';
+  const showResults = Boolean(selectedZone || query || searchParams.get('ver') === 'todas');
 
   // Scroll al inicio cuando cambia la zona
   useEffect(() => {
@@ -25,7 +29,8 @@ export default function Propiedades() {
     async function fetchProperties() {
       try {
         const response = await fetch('/api/properties');
-        if (response.ok) {
+        if (!response.ok) throw new Error("No se pudo cargar el catálogo");
+        {
           const data = await response.json();
           const mappedData: Property[] = data.map((p: any) => ({
             ...p,
@@ -40,6 +45,9 @@ export default function Propiedades() {
         }
       } catch (error) {
         console.error("Error fetching properties from API:", error);
+        setLoadError(true);
+      } finally {
+        setLoading(false);
       }
     }
     fetchProperties();
@@ -66,29 +74,14 @@ export default function Propiedades() {
     return Array.from(propertyMap.values());
   }, [dbProperties, staticProperties]);
 
-  // Filtrar por zona principal o sub-zona
-  const filteredProperties = useMemo(() => {
-    if (!selectedZone) return [];
-    
-    // Función de normalización robusta
-    const normalize = (str: string) => 
-      (str || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
-
-    // Si la zona seleccionada es una zona padre (ej. madrid-capital)
-    // mostramos todas las propiedades de sus hijos también
-    const childZones = zones.filter(z => z.parent === selectedZone).map(z => z.id);
-    const zonesToInclude = [selectedZone, ...childZones].map(z => normalize(z));
-    
-    return allProperties.filter(p => zonesToInclude.includes(normalize(p.zone)));
-
-  }, [selectedZone, allProperties]);
-
+  const filteredProperties = useMemo(() =>
+    filterProperties(allProperties, selectedZone, query), [allProperties, selectedZone, query]);
   const currentZone = zones.find(z => z.id === selectedZone);
 
   return (
     <div className="min-h-screen pt-24 bg-white pb-20">
       <AnimatePresence mode="wait">
-        {!selectedZone ? (
+        {!showResults ? (
           <motion.div 
             key="menu"
             initial={{ opacity: 0 }}
@@ -104,7 +97,7 @@ export default function Propiedades() {
 
               {/* Columna Lateral: Buscador y Filtros */}
               <div className="w-full lg:w-[350px] order-1 lg:order-last">
-                <PropertySidebar activeZone={null} />
+                <PropertySidebar activeZone={null} query={query} />
               </div>
             </div>
           </motion.div>
@@ -124,15 +117,20 @@ export default function Propiedades() {
                     {selectedZone === 'singulares' ? 'IBERCORP UNIQUE' : 'DISTRITO'}
                   </span>
                   <h2 className="text-3xl md:text-4xl font-light tracking-[0.15em] text-[#2C2C2C] uppercase mb-4" style={{ fontFamily: "var(--font-display)" }}>
-                    {currentZone?.name || "Resultados"}
+                    {currentZone?.name || (query ? "Resultados de búsqueda" : "Todas las propiedades")}
                   </h2>
                   <div className="w-20 h-px bg-[#B8A07E] mb-6" />
                   <p className="text-gray-500 font-light leading-relaxed max-w-2xl">
-                    {currentZone?.description}
+                    {query ? `Búsqueda: “${query}”` : currentZone?.description}
+                    {!loading && !loadError && <span className="block mt-3" role="status">{filteredProperties.length} {filteredProperties.length === 1 ? "propiedad encontrada" : "propiedades encontradas"}</span>}
                   </p>
                 </header>
 
-                {filteredProperties.length > 0 ? (
+                {loading ? (
+                  <p role="status" className="py-12 text-gray-500">Cargando propiedades…</p>
+                ) : loadError ? (
+                  <div role="alert" className="py-12"><p>No se ha podido cargar el catálogo. Inténtelo de nuevo.</p><button className="mt-4 underline" onClick={() => window.location.reload()}>Reintentar</button></div>
+                ) : filteredProperties.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     {filteredProperties.map((property, i) => (
                       <motion.div 
@@ -147,10 +145,10 @@ export default function Propiedades() {
                   </div>
                 ) : (
                   <div className="py-32 text-center border border-dashed border-gray-100 rounded-lg">
-                    <p className="text-gray-400 font-light text-lg">No se han encontrado propiedades activas en esta sección.</p>
-                    <Link href="/propiedades">
+                    <p className="text-gray-400 font-light text-lg">No hay propiedades que coincidan con esta búsqueda.</p>
+                    <Link href="/propiedades?ver=todas">
                       <button className="mt-6 px-8 py-3 border border-gray-200 text-xs tracking-widest uppercase hover:bg-gray-50 transition-all">
-                        Volver al menú
+                        Ver todas las propiedades
                       </button>
                     </Link>
                   </div>
@@ -159,7 +157,7 @@ export default function Propiedades() {
 
               {/* Barra Lateral: Filtros en modo listado */}
               <div className="w-full lg:w-[350px] order-1 lg:order-last">
-                <PropertySidebar activeZone={selectedZone} />
+                <PropertySidebar activeZone={selectedZone} query={query} />
               </div>
             </div>
           </motion.div>

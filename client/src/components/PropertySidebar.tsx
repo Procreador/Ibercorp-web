@@ -1,15 +1,18 @@
-import { useState } from "react";
-import { Link } from "wouter";
+import { useEffect, useState } from "react";
+import { Link, useLocation } from "wouter";
 import { zones } from "@/lib/properties";
 import { Input } from "@/components/ui/input";
 import { Search, ChevronDown, ChevronRight, LayoutGrid } from "lucide-react";
 
 interface PropertySidebarProps {
   activeZone?: string | null;
+  query?: string;
 }
 
-export default function PropertySidebar({ activeZone }: PropertySidebarProps) {
-  const [search, setSearch] = useState("");
+export default function PropertySidebar({ activeZone, query = "" }: PropertySidebarProps) {
+  const [search, setSearch] = useState(query);
+  const [, navigate] = useLocation();
+  useEffect(() => setSearch(query), [query]);
 
   const mainGroups = [
     {
@@ -34,21 +37,28 @@ export default function PropertySidebar({ activeZone }: PropertySidebarProps) {
           <h3 className="text-[11px] tracking-[0.25em] font-bold text-[#2C2C2C] uppercase" style={{ fontFamily: 'var(--font-heading)' }}>
             BUSCAR PROPIEDADES
           </h3>
-          <div className="relative group">
+          <form className="relative group" role="search" onSubmit={(event) => {
+            event.preventDefault();
+            const value = search.trim();
+            navigate(value ? `/propiedades?q=${encodeURIComponent(value)}` : "/propiedades?ver=todas");
+          }}>
             <Input 
-              placeholder="Zona, barrio, ID..." 
+              placeholder="Zona, calle o referencia..."
+              aria-label="Buscar por zona, calle o referencia" 
               className="pl-4 pr-10 py-5 border-gray-200 rounded-none focus:ring-0 focus:border-[#B8A07E] bg-white transition-all text-sm font-light italic"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 group-hover:text-[#B8A07E] transition-colors w-4 h-4" />
-          </div>
+            <button type="submit" aria-label="Buscar propiedades" className="absolute right-0 top-0 h-full px-3 text-[#8C7352] hover:text-black focus-visible:outline focus-visible:outline-2">
+              <Search className="w-5 h-5" />
+            </button>
+          </form>
         </div>
 
         {/* Categories / Zones */}
         <div className="space-y-1.5">
            {/* All Properties / Reset */}
-           <Link href="/propiedades">
+           <Link href="/propiedades?ver=todas">
             <div className={`flex items-center justify-between cursor-pointer py-2 border-b border-gray-50 group hover:pl-2 transition-all ${!activeZone ? 'text-[#B8A07E]' : 'text-gray-800'}`}>
               <div className="flex items-center gap-2">
                 <LayoutGrid className="w-4 h-4 opacity-50" />
