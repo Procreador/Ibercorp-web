@@ -13,6 +13,7 @@ const __dirname = path.dirname(__filename);
 // Import API routes
 // Import API routes
 import { router as propertiesRouter } from "./routes/properties.js";
+import { router as leadsRouter } from "./routes/leads.js";
 import { router as authRouter } from "./routes/auth.js";
 import { initBot } from "./bot.js";
 
@@ -31,6 +32,13 @@ async function startServer() {
       ? path.resolve(__dirname, "public")
       : path.resolve(__dirname, "..", "dist", "public");
 
+  // Never expose database files stored alongside public photos on the volume.
+  app.use((req, res, next) => {
+    let pathname: string;
+    try { pathname = decodeURIComponent(req.path); } catch { res.sendStatus(400); return; }
+    if (pathname.split("/").includes(".ibercorp")) { res.sendStatus(404); return; }
+    next();
+  });
   app.use(express.static(staticPath));
 
   const imagesPath = path.resolve(__dirname, "../../client/public/img/properties");
@@ -39,6 +47,7 @@ async function startServer() {
 
   // API Routes
   app.use("/api/auth", authRouter);
+  app.use("/api/leads", leadsRouter);
   app.use("/api/properties", propertiesRouter);
 
   // Health check endpoint

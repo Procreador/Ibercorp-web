@@ -14,14 +14,14 @@ export default function PropertiesCategoryMenu() {
         <section className="space-y-8">
           <Link href={`/propiedades?zona=${madridZone.id}`}>
             <div className="group cursor-pointer">
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1 }}
                 className="relative overflow-hidden rounded-sm aspect-[16/8] shadow-sm"
               >
-                <img 
-                  src={madridZone.menuImage} 
+                <img
+                  src={madridZone.menuImage}
                   alt="Madrid Capital"
                   className="w-full h-full object-cover shadow-inner transition-transform duration-700 group-hover:scale-105"
                 />
@@ -43,7 +43,7 @@ export default function PropertiesCategoryMenu() {
       {/* SECCIÓN 2: DISTRITOS (ALMAGRO, JERÓNIMOS, SALAMANCA) */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {districtZones.map((zone, i) => (
-          <motion.div 
+          <motion.div
             key={zone.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -52,9 +52,9 @@ export default function PropertiesCategoryMenu() {
             <Link href={`/propiedades?zona=${zone.id}`}>
               <div className="group cursor-pointer space-y-4">
                 <div className="relative aspect-[4/3] overflow-hidden rounded-sm bg-gray-50 shadow-sm border border-gray-100">
-                  <img 
+                  <img
                     src={zone.menuImage}
-                    loading="lazy" 
+                    loading="lazy"
                     alt={zone.menuImageAlt || zone.name}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
@@ -84,7 +84,7 @@ export default function PropertiesCategoryMenu() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {otherZones.map((zone, i) => (
-            <motion.div 
+            <motion.div
               key={zone.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -93,9 +93,9 @@ export default function PropertiesCategoryMenu() {
               <Link href={`/propiedades?zona=${zone.id}`}>
                 <div className="group cursor-pointer space-y-4">
                   <div className="relative aspect-[4/3] overflow-hidden rounded-sm bg-gray-50 shadow-sm border border-gray-100">
-                    <img 
+                    <img
                       src={zone.menuImage}
-                    loading="lazy" 
+                    loading="lazy"
                       alt={zone.menuImageAlt || zone.name}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     />
