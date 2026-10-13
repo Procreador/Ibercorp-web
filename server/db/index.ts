@@ -2,12 +2,16 @@ import Database from "better-sqlite3";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
+import catalogBootstrap from "./catalog-bootstrap.json";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Database path
-const dbPath = path.resolve(process.cwd(), "data/properties.db");
+// Keep SQLite on the existing Railway photo volume, in a private directory.
+const dbPath = process.env.RAILWAY_VOLUME_MOUNT_PATH
+  ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, ".ibercorp", "properties.db")
+  : path.resolve(process.env.DATABASE_PATH || "data/properties.db");
 
 // Ensure data directory exists
 const dataDir = path.dirname(dbPath);
@@ -181,6 +185,18 @@ export const db = {
     transaction(properties);
   },
 };
+
+// One-time migration snapshot: never resurrect properties after a later deletion.
+database.exec("CREATE TABLE IF NOT EXISTS app_migrations (id TEXT PRIMARY KEY)");
+if (process.env.RAILWAY_VOLUME_MOUNT_PATH) {
+  database.transaction(() => {
+    const migration = "persistent-catalog-20261013";
+    if (database.prepare("SELECT id FROM app_migrations WHERE id = ?").get(migration)) return;
+    const count = database.prepare("SELECT COUNT(*) AS n FROM properties").get() as { n: number };
+    if (count.n === 0) db.seedData(catalogBootstrap as Property[]);
+    database.prepare("INSERT INTO app_migrations (id) VALUES (?)").run(migration);
+  })();
+}
 
 // Export database instance for advanced queries
 export { database };

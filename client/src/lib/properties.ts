@@ -52,7 +52,8 @@ export const zones = [
     id: "almagro",
     name: "Almagro",
     description: "Elegancia clásica y fincas señoriales en Chamberí.",
-    menuImage: "/img/menu_propiedades/ptaalcala.jpg",
+    menuImage: "/img/menu_propiedades/almagro-zurbano.jpg",
+    menuImageAlt: "Palacio de Zurbano en el barrio de Almagro",
     parent: "madrid-capital",
   },
   {
@@ -66,7 +67,8 @@ export const zones = [
     id: "jeronimos",
     name: "Jerónimos",
     description: "Prestigio y patrimonio junto al Retiro.",
-    menuImage: "/img/menu_propiedades/iStock-1489512945.jpg",
+    menuImage: "/img/menu_propiedades/jeronimos-real.jpg",
+    menuImageAlt: "Iglesia de San Jerónimo el Real en el barrio de Jerónimos",
     parent: "madrid-capital",
   },
   {
@@ -86,7 +88,8 @@ export const zones = [
     id: "areas-residenciales",
     name: "Madrid - Áreas Residenciales",
     description: "Zonas residenciales premium a las afueras de la capital.",
-    menuImage: "/img/menu_propiedades/ptaalcala.jpg",
+    menuImage: "/img/menu_propiedades/otras-zonas-jardin.jpg",
+    menuImageAlt: "Vivienda con jardín en Pozuelo de Alarcón",
   },
   {
     id: "la-moraleja",
@@ -110,13 +113,15 @@ export const zones = [
     id: "otras-zonas",
     name: "Otras Zonas",
     description: "Otras ubicaciones estratégicas de interés.",
-    menuImage: "/img/menu_propiedades/ptaalcala.jpg",
+    menuImage: "/img/menu_propiedades/otras-zonas-jardin.jpg",
+    menuImageAlt: "Vivienda con jardín en Pozuelo de Alarcón",
   },
   {
     id: "singulares",
     name: "Propiedades Singulares",
     description: "Inmuebles únicos por su arquitectura o ubicación.",
-    menuImage: "/img/menu_propiedades/ptaalcala.jpg",
+    menuImage: "/img/menu_propiedades/singulares-arquitectura.jpg",
+    menuImageAlt: "Vestíbulo señorial de una finca madrileña",
   },
 ];
 

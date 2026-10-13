@@ -14,14 +14,14 @@ export default function PropertiesCategoryMenu() {
         <section className="space-y-8">
           <Link href={`/propiedades?zona=${madridZone.id}`}>
             <div className="group cursor-pointer">
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1 }}
                 className="relative overflow-hidden rounded-sm aspect-[16/8] shadow-sm"
               >
-                <img 
-                  src="/img/menu_propiedades/Cibeles---Atardecer-Madrid.jpg" 
+                <img
+                  src={madridZone.menuImage}
                   alt="Madrid Capital"
                   className="w-full h-full object-cover shadow-inner transition-transform duration-700 group-hover:scale-105"
                 />
@@ -43,7 +43,7 @@ export default function PropertiesCategoryMenu() {
       {/* SECCIÓN 2: DISTRITOS (ALMAGRO, JERÓNIMOS, SALAMANCA) */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {districtZones.map((zone, i) => (
-          <motion.div 
+          <motion.div
             key={zone.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -52,9 +52,10 @@ export default function PropertiesCategoryMenu() {
             <Link href={`/propiedades?zona=${zone.id}`}>
               <div className="group cursor-pointer space-y-4">
                 <div className="relative aspect-[4/3] overflow-hidden rounded-sm bg-gray-50 shadow-sm border border-gray-100">
-                  <img 
-                    src={zone.menuImage} 
-                    alt={zone.name}
+                  <img
+                    src={zone.menuImage}
+                    loading="lazy"
+                    alt={zone.menuImageAlt || zone.name}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                 </div>
@@ -83,7 +84,7 @@ export default function PropertiesCategoryMenu() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {otherZones.map((zone, i) => (
-            <motion.div 
+            <motion.div
               key={zone.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -92,9 +93,10 @@ export default function PropertiesCategoryMenu() {
               <Link href={`/propiedades?zona=${zone.id}`}>
                 <div className="group cursor-pointer space-y-4">
                   <div className="relative aspect-[4/3] overflow-hidden rounded-sm bg-gray-50 shadow-sm border border-gray-100">
-                    <img 
-                      src={zone.menuImage} 
-                      alt={zone.name}
+                    <img
+                      src={zone.menuImage}
+                    loading="lazy"
+                      alt={zone.menuImageAlt || zone.name}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     />
                     {/* Caption inside for these ones based on visual feel */}
@@ -110,6 +112,12 @@ export default function PropertiesCategoryMenu() {
           ))}
         </div>
       </section>
+      <details className="text-xs text-[#6B6560] leading-relaxed">
+        <summary className="cursor-pointer">Créditos de las fotografías</summary>
+        <p className="mt-2">Almagro: <a className="underline" href="https://commons.wikimedia.org/wiki/File:Palacio_de_Zurbano_(Madrid)_01.jpg">Palacio de Zurbano</a>, Luis García, <a className="underline" href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.</p>
+        <p>Jerónimos: <a className="underline" href="https://commons.wikimedia.org/wiki/File:San_Jeronimo_el_Real-View.jpg">San Jerónimo el Real</a>, Håkan Svensson (Xauxa), <a className="underline" href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>.</p>
+        <p>Fotografías mostradas con encuadre adaptado. Las imágenes de categorías son ilustrativas; la disponibilidad se indica en cada ficha.</p>
+      </details>
     </div>
   );
 }
