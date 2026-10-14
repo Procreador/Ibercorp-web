@@ -13,11 +13,11 @@ export default function HeroCarousel() {
       </video>
 
       {/* Malla semitransparente / Overlay oscura */}
-      <div className="absolute inset-0 bg-black/50" />
+      <div className="absolute inset-0 bg-black/20" />
 
       {/* Hero Content */}
       <div className="absolute inset-0 flex items-center justify-center z-10">
-        <div className="text-center px-6 max-w-4xl">
+        <div className="text-center px-6 max-w-4xl" style={{ textShadow: "0 2px 10px rgba(0, 0, 0, 0.65)" }}>
           <h1
             className="text-white text-3xl sm:text-4xl md:text-5xl lg:text-[56px] font-light leading-[1.2] tracking-wide mb-8"
             style={{ fontFamily: "var(--font-display)" }}
