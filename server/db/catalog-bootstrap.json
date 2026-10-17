@@ -1,14 +1,14 @@
 [
   {
     "id": "ic8105",
-    "title": "Velázquez 28 · 307 m² con terraza de 55 m²",
-    "address": "Calle Velázquez 28, 1.º derecha, 28001 Madrid",
+    "title": "Barrio de Salamanca · 307 m² con terraza de 55 m²",
+    "address": "Barrio de Salamanca, Madrid",
     "zone": "salamanca",
     "price": "7.200.000 €",
     "size": 307,
     "bedrooms": 4,
     "bathrooms": 4,
-    "description": "Vivienda reformada y amueblada en Recoletos, en el Barrio de Salamanca, con 307 m² interiores y una terraza de 55 m² adicionales. La distribución incluye salón, comedor, cocina, cuatro dormitorios con baño en suite y un aseo de cortesía. La terraza dispone de espacios de estar, comedor y cocina exterior, según el plano y las fotografías.\n\nSituada en la primera planta de un edificio de 1918, cuenta con aire acondicionado, calefacción y agua caliente individuales, portero y trastero. Interiorismo y mobiliario incluidos.\n\nIBI exento según el dosier facilitado.",
+    "description": "Vivienda reformada y amueblada en el Barrio de Salamanca, con 307 m² interiores y una terraza de 55 m² adicionales. La distribución incluye salón, comedor, cocina, cuatro dormitorios con baño en suite y un aseo de cortesía. La terraza dispone de espacios de estar, comedor y cocina exterior, según el plano y las fotografías.\n\nSituada en un edificio de 1918, cuenta con aire acondicionado, calefacción y agua caliente individuales, portero y trastero. Interiorismo y mobiliario incluidos.\n\nIBI exento según el dosier facilitado.",
     "features": [
       "307 m² más terraza de 55 m²",
       "Reformado y amueblado",
@@ -75,18 +75,18 @@
     "reference": "IC-8105",
     "badge": "REFORMADO",
     "createdAt": "2026-10-12T08:09:41.615Z",
-    "updatedAt": "2026-10-12T08:10:16.082Z"
+    "updatedAt": "2026-10-17T09:13:04.489Z"
   },
   {
     "id": "ic8104",
-    "title": "López de Hoyos 11 · Cuatro dormitorios en suite",
-    "address": "Calle López de Hoyos 11, 3.º derecha, 28006 Madrid",
+    "title": "Barrio de Salamanca · Cuatro dormitorios en suite",
+    "address": "Barrio de Salamanca, Madrid",
     "zone": "salamanca",
     "price": "3.800.000 €",
     "size": 243,
     "bedrooms": 4,
     "bathrooms": 4,
-    "description": "Vivienda reformada y amueblada de 243 m² en López de Hoyos, en la zona de Castellana del Barrio de Salamanca. Ofrece una amplia zona de salón y comedor con cocina, cuatro dormitorios en suite, cuatro baños completos y un aseo de cortesía. El interiorismo y el mobiliario están incluidos.\n\nOcupa la tercera planta de un edificio de 1934 con portero. Dispone de agua caliente individual y calefacción central con medidores individuales.\n\nGastos de comunidad: 378 €/mes más agua. IBI: 2.700 €.",
+    "description": "Vivienda reformada y amueblada de 243 m² en la zona de Castellana del Barrio de Salamanca. Ofrece una amplia zona de salón y comedor con cocina, cuatro dormitorios en suite, cuatro baños completos y un aseo de cortesía. El interiorismo y el mobiliario están incluidos.\n\nSe encuentra en un edificio de 1934 con portero. Dispone de agua caliente individual y calefacción central con medidores individuales.\n\nGastos de comunidad: 378 €/mes más agua. IBI: 2.700 €.",
     "features": [
       "Reformado y amueblado",
       "4 dormitorios en suite",
@@ -130,12 +130,12 @@
     "reference": "IC-8104",
     "badge": "REFORMADO",
     "createdAt": "2026-10-12T08:08:38.368Z",
-    "updatedAt": "2026-10-12T08:08:57.124Z"
+    "updatedAt": "2026-10-17T09:13:10.670Z"
   },
   {
     "id": "ic2693",
-    "title": "FANTASTICO CHALET EN URBANIZACION MONTEALINA",
-    "address": "Montealina",
+    "title": "Montealina · Chalet independiente en Pozuelo",
+    "address": "Montealina, Pozuelo de Alarcón",
     "zone": "pozuelo",
     "price": "2.550.000€",
     "size": 550,
@@ -152,18 +152,18 @@
     "reference": "IC-2693",
     "badge": "NUEVO",
     "createdAt": "2026-10-12T08:01:55.709Z",
-    "updatedAt": "2026-10-12T08:01:55.709Z"
+    "updatedAt": "2026-10-17T09:13:16.902Z"
   },
   {
     "id": "ic8103",
-    "title": "Claudio Coello 76 · 1.º B reformado y amueblado",
-    "address": "Calle Claudio Coello 76, 1.º B, 28001 Madrid",
+    "title": "Barrio de Salamanca · Reformado y amueblado · IC-8103",
+    "address": "Barrio de Salamanca, Madrid",
     "zone": "salamanca",
     "price": "2.820.000 €",
     "size": 161,
     "bedrooms": 3,
     "bathrooms": 3,
-    "description": "Vivienda reformada y amueblada de 161 m² en Claudio Coello, en el Barrio de Salamanca. La zona de día integra salón, comedor y cocina, con una decoración de tonos suaves y acabados en madera. Dispone de tres dormitorios y tres cuartos de baño, con interiorismo y mobiliario incluidos.\n\nSituada en la primera planta de un edificio de 1951. Incluye trastero y servicio de portero, agua caliente individual y calefacción central con medidores individuales.\n\nGastos de comunidad: 183,37 €/mes. IBI: 1.383 €. Tasa de residuos: 337,50 €.",
+    "description": "Vivienda reformada y amueblada de 161 m² en el Barrio de Salamanca. La zona de día integra salón, comedor y cocina, con una decoración de tonos suaves y acabados en madera. Dispone de tres dormitorios y tres cuartos de baño, con interiorismo y mobiliario incluidos.\n\nSituada en un edificio de 1951. Incluye trastero y servicio de portero, agua caliente individual y calefacción central con medidores individuales.\n\nGastos de comunidad: 183,37 €/mes. IBI: 1.383 €. Tasa de residuos: 337,50 €.",
     "features": [
       "Reformado y amueblado",
       "3 dormitorios y 3 baños",
@@ -202,18 +202,18 @@
     "reference": "IC-8103",
     "badge": "REFORMADO",
     "createdAt": "2026-10-12T07:58:08.226Z",
-    "updatedAt": "2026-10-12T07:58:15.225Z"
+    "updatedAt": "2026-10-17T09:13:23.098Z"
   },
   {
     "id": "ic8102",
-    "title": "Claudio Coello 76 · 1.º A reformado y amueblado",
-    "address": "Calle Claudio Coello 76, 1.º A, 28001 Madrid",
+    "title": "Barrio de Salamanca · Reformado y amueblado · IC-8102",
+    "address": "Barrio de Salamanca, Madrid",
     "zone": "salamanca",
     "price": "2.820.000 €",
     "size": 161,
     "bedrooms": 3,
     "bathrooms": 3,
-    "description": "Vivienda de 161 m² reformada y amueblada en Claudio Coello, en el Barrio de Salamanca. El salón y el comedor se articulan junto a la cocina, mientras la zona de descanso dispone de tres dormitorios y tres cuartos de baño. El mobiliario y el interiorismo están incluidos.\n\nUbicada en la primera planta de un edificio de 1951, la propiedad cuenta con trastero y portero. Agua caliente individual y calefacción central con medidores individuales.\n\nGastos de comunidad: 183,37 €/mes. IBI: 1.383 €. Tasa de residuos: 337,50 €.",
+    "description": "Vivienda de 161 m² reformada y amueblada en el Barrio de Salamanca. El salón y el comedor se articulan junto a la cocina, mientras la zona de descanso dispone de tres dormitorios y tres cuartos de baño. El mobiliario y el interiorismo están incluidos.\n\nSituada en un edificio de 1951, la propiedad cuenta con trastero y portero. Agua caliente individual y calefacción central con medidores individuales.\n\nGastos de comunidad: 183,37 €/mes. IBI: 1.383 €. Tasa de residuos: 337,50 €.",
     "features": [
       "Reformado y amueblado",
       "3 dormitorios y 3 baños",
@@ -261,18 +261,18 @@
     "reference": "IC-8102",
     "badge": "REFORMADO",
     "createdAt": "2026-10-12T07:57:03.342Z",
-    "updatedAt": "2026-10-12T07:57:14.102Z"
+    "updatedAt": "2026-10-17T09:13:29.234Z"
   },
   {
     "id": "ic8101",
-    "title": "Castelló 62 · Vivienda reformada de 103 m²",
-    "address": "Calle Castelló 62, 3.º B (interior izquierda), 28001 Madrid",
+    "title": "Barrio de Salamanca · Vivienda reformada de 103 m²",
+    "address": "Barrio de Salamanca, Madrid",
     "zone": "salamanca",
     "price": "1.690.000 €",
     "size": 103,
     "bedrooms": 2,
     "bathrooms": 2,
-    "description": "Vivienda reformada y amueblada de 103 m² en la calle Castelló, en el Barrio de Salamanca. Su distribución reúne salón, comedor y cocina, dos dormitorios —el principal en suite— y dos cuartos de baño. Una propuesta de interiores en tonos claros y madera, con mobiliario incluido.\n\nSituada en la tercera planta de un edificio de 1934, cuenta con portero y trastero. Dispone de agua caliente individual y calefacción central con medidores individuales.\n\nGastos de comunidad: 205 €/mes. IBI: 642,84 €. Tasa de residuos (TGRU): 183,48 €.",
+    "description": "Vivienda reformada y amueblada de 103 m² en el Barrio de Salamanca. Su distribución reúne salón, comedor y cocina, dos dormitorios —el principal en suite— y dos cuartos de baño. Una propuesta de interiores en tonos claros y madera, con mobiliario incluido.\n\nSituada en un edificio de 1934, cuenta con portero y trastero. Dispone de agua caliente individual y calefacción central con medidores individuales.\n\nGastos de comunidad: 205 €/mes. IBI: 642,84 €. Tasa de residuos (TGRU): 183,48 €.",
     "features": [
       "Reformado y amueblado",
       "2 dormitorios y 2 baños",
@@ -314,18 +314,18 @@
     "reference": "IC-8101",
     "badge": "REFORMADO",
     "createdAt": "2026-10-12T07:55:54.782Z",
-    "updatedAt": "2026-10-12T07:56:07.353Z"
+    "updatedAt": "2026-10-17T09:13:35.213Z"
   },
   {
     "id": "ic8106",
-    "title": "Españoleto 11 · Tres suites en Almagro",
-    "address": "Calle Españoleto 11, 4.º izquierda, 28010 Madrid",
+    "title": "Almagro · Tres dormitorios en suite",
+    "address": "Almagro, Chamberí, Madrid",
     "zone": "almagro",
     "price": "3.900.000 €",
     "size": 245,
     "bedrooms": 3,
     "bathrooms": 3,
-    "description": "Vivienda reformada y amueblada de 245 m² en Españoleto, en el barrio de Almagro, distrito de Chamberí. Su distribución ofrece salón y comedor con cocina, tres dormitorios en suite, tres baños completos y un aseo. Los tonos claros, la madera y los detalles de color acompañan una zona de día abierta.\n\nSituada en la cuarta planta de un edificio de 1945, cuenta con aire acondicionado, calefacción y agua caliente individuales, portero y trastero.\n\nGastos de comunidad: 305,70 €/mes más agua. IBI: 1.588,40 €. Tasa de residuos (TGRU): 409,98 €.",
+    "description": "Vivienda reformada y amueblada de 245 m² en el barrio de Almagro, distrito de Chamberí. Su distribución ofrece salón y comedor con cocina, tres dormitorios en suite, tres baños completos y un aseo. Los tonos claros, la madera y los detalles de color acompañan una zona de día abierta.\n\nSituada en un edificio de 1945, cuenta con aire acondicionado, calefacción y agua caliente individuales, portero y trastero.\n\nGastos de comunidad: 305,70 €/mes más agua. IBI: 1.588,40 €. Tasa de residuos (TGRU): 409,98 €.",
     "features": [
       "Reformado y amueblado",
       "3 dormitorios en suite",
@@ -360,6 +360,6 @@
     "reference": "IC-8106",
     "badge": "REFORMADO",
     "createdAt": "2026-10-11T21:51:26.670Z",
-    "updatedAt": "2026-10-12T08:10:52.667Z"
+    "updatedAt": "2026-10-17T09:13:41.277Z"
   }
 ]
